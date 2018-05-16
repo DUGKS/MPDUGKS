@@ -1,0 +1,56 @@
+_10_Car_Blend_Poiseuille_LBM    =    Mesh File
+Car    =    Mesh Type
+CD    =    Flux Scheme
+NEE    =    Boundary Condition
+D2Q9AC    =    velocity model
+He-Shan-Doolean    =    Force model
+null    =    EoS model
+5    =    left
+6    =    right
+7    =    top
+4    =    bottom
+#----------------------------------------
+0.5    =    Omega0//sutherland power
+0.666667    =    Prandtl
+0    =    nK//internal degrees of freedom
+1.5    =    specific heat of constant volume
+1.66667    =    Gamma//specific heat ratio
+#----------------------------------------
+1    =    Qu
+9    =    Qv
+100    =    NL
+100    =    Character Length
+1    =    MinL
+0.221116    =    Knudsen
+0    =    Mach
+0    =    Re
+0    =    U0
+0.333333    =    R0
+1    =    T0
+0.1    =    dynamic viscosity
+0.1    =    kinetic viscosity
+0.3    =    tau0
+1.5    =    Lambda0
+0.5    =    CFL
+0.5    =    dt
+1.66667    =    dt/tau0
+1e-08    =    RESIDUAL
+1    =    MaSpan
+0    =    Eta// T of D2V16
+-------------Phase Field--------------
+0.05    =    Cahn number
+0    =    Peclet number
+0    =    Eotvos(Bond) number
+0    =    Morton number
+0    =    Reynolds number
+
+0.1    =    mobility
+5    =    inteface width
+0.001    =    Sigma(surface tension coefficient)
+0.0024    =    Beta
+0.0075    =    Kappa
+10    =    liquid density
+1    =    vapor density
+0.1    =    liquid viscosity
+0.1    =    vapor viscosity
+0.3    =    mobility relaxition time
