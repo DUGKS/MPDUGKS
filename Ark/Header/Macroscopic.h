@@ -7,8 +7,8 @@ class MacroQuantity;
 // arithmetic operators
 MacroQuantity operator-(const MacroQuantity &lhs,const MacroQuantity &rhs);
 MacroQuantity operator+(const MacroQuantity &lhs,const MacroQuantity &rhs);
-MacroQuantity operator*(int a,const MacroQuantity &rhs);
-MacroQuantity operator*(const MacroQuantity &lhs,int a);
+MacroQuantity operator*(double a,const MacroQuantity &rhs);
+MacroQuantity operator*(const MacroQuantity &lhs,double a);
 //
 class MacroQuantity
 {
@@ -23,8 +23,8 @@ public:
 	//
 	friend MacroQuantity operator-(const MacroQuantity &lhs,const MacroQuantity &rhs);
 	friend MacroQuantity operator+(const MacroQuantity &lhs,const MacroQuantity &rhs);
-	friend MacroQuantity operator*(int a,const MacroQuantity &rhs);
-	friend MacroQuantity operator*(const MacroQuantity &lhs,int a);
+	friend MacroQuantity operator*(double a,const MacroQuantity &rhs);
+	friend MacroQuantity operator*(const MacroQuantity &lhs,double a);
 	//
 	MacroQuantity& operator-=(const MacroQuantity &rhs);
 	MacroQuantity& operator+=(const MacroQuantity &rhs);

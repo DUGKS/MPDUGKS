@@ -21,9 +21,11 @@ int const IC = 198, JC = 197;
 
 extern void TaylorGreenVortex(double t,double x,double y,double &u, double &v, double &p);
 
-extern void TaylorCouetteAnalyticalSolution(double x,double y,double &u_A);
+extern void TaylorCouetteAnalytical(double x,double y,double &u_A);
 
 extern void AnalyticalForceDrivenTG(double x,double y,double &u_A, double &v_A,double &p_A);
+
+extern void LayeredPoiseuilleAnalytical(double const xc,double const yc,double &u_A);
 
 void OutputCase()
 {
@@ -151,8 +153,21 @@ void TaylorCouette_L2Norm(double const &t,double &L2_uv)
 	double  Sumdudv = 0.0,Sumuv_A = 0.0;
 	for(int i =0;i < Cells;++i)
 	{
-		TaylorCouetteAnalyticalSolution(CellArray[i].xc,CellArray[i].yc,u_A);
+		TaylorCouetteAnalytical(CellArray[i].xc,CellArray[i].yc,u_A);
 		du = sqrt(CellArray[i].MsQ().SqUV()) - u_A;
+		Sumdudv += du*du;
+		Sumuv_A += u_A*u_A;
+	}
+	L2_uv = sqrt(Sumdudv/Sumuv_A);
+}
+void LayeredPoiseuille_L2Norm(double const &t,double &L2_uv)
+{
+	double u_A, du;
+	double  Sumdudv = 0.0,Sumuv_A = 0.0;
+	for(int i =0;i < Cells;++i)
+	{
+		LayeredPoiseuilleAnalytical(CellArray[i].xc,CellArray[i].yc,u_A);
+		du = CellArray[i].MsQ().U - u_A;
 		Sumdudv += du*du;
 		Sumuv_A += u_A*u_A;
 	}
@@ -178,8 +193,9 @@ void ForceDrivenTaylorGreen_L2Norm(double &L2_uv, double &L2_p)
 }
 void Output_L2Norm(double const &t,double &L2_uv, double &L2_p)
 {	
-	ForceDrivenTaylorGreen_L2Norm(L2_uv,L2_p);
+	//ForceDrivenTaylorGreen_L2Norm(L2_uv,L2_p);
 	//TaylorCouette_L2Norm(t,L2_uv);
+	LayeredPoiseuille_L2Norm(t,L2_uv);
 	ostringstream oss_L2;
 	oss_L2 <<"../Convergence/L2_uvp_mu"<<Mu0<<"_Re"<<Re<<"_"<<NL<<_MESHFILE_NAME_ARK<<".dat";
 	ofstream OutFile_L2(oss_L2.str().c_str(),ofstream::app);

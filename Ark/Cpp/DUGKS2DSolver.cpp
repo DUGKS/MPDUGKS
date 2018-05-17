@@ -41,6 +41,10 @@ extern void Wall_3_DS(Face_2D &face);
 
 extern void Wall_3_NEE(Face_2D &face);
 
+extern void Wall_3_BB(Face_2D &face);
+
+extern void fluxCheck(Face_2D const* faceptr);
+
 //----------------------------------------------------------
 
 extern void Update_force(Cell_2D &cell);
@@ -132,8 +136,8 @@ omp_set_num_threads(ThreadNum);
 step = 0;
 #pragma omp parallel
 {
-while(step < End_Step)
-//while(ResidualPer1k > RESIDUAL)
+//while(step < End_Step)
+while(ResidualPer1k > RESIDUAL)
 {
 //---------------------------------------------------------
 	#pragma omp for schedule(guided)
@@ -192,7 +196,7 @@ while(step < End_Step)
 		#endif
 	#endif
 //
-#ifdef _Wall_3_BCs_FLIP
+	#ifdef _Wall_3_BCs_FLIP
 		#pragma omp for schedule(guided)
 		for(int n = 0;n < WallFaceNum;++n)
 		{
@@ -203,8 +207,13 @@ while(step < End_Step)
 			#ifdef _Wall_3_BCs_NEE
 			Wall_3_NEE(*WallFaceA[n]);
 			#endif
+//
+			#ifdef _Wall_3_BCs_BB
+			Flux_2D(*WallFaceA[n]);
+			Wall_3_BB(*WallFaceA[n]);
+			#endif
 		}
-#endif
+	#endif
 // //----------------------------------------Wall Face----------------------------------
 // 	#ifdef _Wall_3_BCs_FLIP
 // // 	for(int i_Wall = 0;i_Wall < WallFaceNum;++i_Wall)
@@ -223,6 +232,16 @@ while(step < End_Step)
 // 	for(int i = 0;i < WallFaceNum;++i)
 // 		Update_BoundFlux(*WallFaceA[i]);
 // 	#endif
+	#pragma omp for schedule(guided) 
+	LoopPS(Faces)
+	{
+		Update_phiFlux_h(FaceArray[n]);
+	}
+	#pragma omp for schedule(guided)
+		for(int n = 0;n < WallFaceNum;++n)
+		{
+			fluxCheck(WallFaceA[n]);
+		}
 //--------------------auxilary DDF : phi tilde----------------------------
 	#pragma omp for schedule(guided)
 	LoopPS(Cells)
@@ -576,7 +595,7 @@ void Flux_2D(Face_2D &face)
 	Update_DVDF_Source_h(face);
 	#endif
 	Update_phi_h(face);
-	Update_phiFlux_h(face);
+//	Update_phiFlux_h(face);
 }
 //-------------------------------------------------------------------------------
 void Update_phi_T(Cell_2D &cell)

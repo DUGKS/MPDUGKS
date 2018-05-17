@@ -25,7 +25,15 @@ T_Outlet = T0*((1+0.5*(Gamma-1)*Ma*Ma)*(2.0*Gamma/(Gamma-1)*Ma*Ma-1)/
 U_Outlet = Ma_Outlet*sqrt(Gamma*R0*T_Outlet),
 
 V_Outlet = 0.0;*/
+namespace D2Q9{
 
+double const xi_u[DV_Qv] = {0,1,1,0,-1,-1,-1,0,1};
+
+double const xi_v[DV_Qv] = {0,0,1,1,1,0,-1,-1,-1};
+
+int const _BB[DV_Qv] = {0,5,6,7,8,1,2,3,4};
+
+}
 //---------------------2D-Riemann---------------------------------
 
 const double
@@ -101,9 +109,9 @@ namespace PhaseFieldAC
 
 	const double 
 
-	Mo = Gy*(RhoL-RhoV)*MuL*MuL*MuL*MuL/(RhoL*RhoL*Sigma*Sigma*Sigma),
+	Mo = Gx*(RhoL-RhoV)*MuL*MuL*MuL*MuL/(RhoL*RhoL*Sigma*Sigma*Sigma),
 
-	Eo = Gy*(RhoL-RhoV)*4*radius*radius/Sigma,
+	Eo = Gx*(RhoL-RhoV)*4*radius*radius/Sigma,
 
 	ReMP = sqrt(Gy*RhoL*(RhoL-RhoV)*diameter)*diameter/MuL; 
 }
@@ -139,7 +147,7 @@ ConvergenceControl = 1000, //SumRho,SumT
 
 ResidualControl = 1000, //print to screen
 
-writeFileControl = 10000;
+writeFileControl = 1000;
 
 double const
 

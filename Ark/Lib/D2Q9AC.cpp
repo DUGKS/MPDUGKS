@@ -6,13 +6,15 @@ using namespace PhaseFieldAC;
 #include <iostream>
 using std::cout;
 
-namespace D2Q9{
+// namespace D2Q9{
 
-double const xi_u[DV_Qv] = {0,1,1,0,-1,-1,-1,0,1};
+// double const xi_u[DV_Qv] = {0,1,1,0,-1,-1,-1,0,1};
 
-double const xi_v[DV_Qv] = {0,0,1,1,1,0,-1,-1,-1};
+// double const xi_v[DV_Qv] = {0,0,1,1,1,0,-1,-1,-1};
 
-}
+// int const _BB[DV_Qv] = {0,3,4,1,2,7,8,5,6};
+
+// }
 
 
 extern double * const xi_u = new double[DV_Qv];

@@ -40,8 +40,8 @@ null    =    EoS model
 -------------Phase Field--------------
 0.05    =    Cahn number
 0    =    Peclet number
-0    =    Eotvos(Bond) number
-0    =    Morton number
+0.6336    =    Eotvos(Bond) number
+3.96    =    Morton number
 0    =    Reynolds number
 
 0.1    =    mobility

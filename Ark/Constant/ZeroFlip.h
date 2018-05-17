@@ -73,8 +73,13 @@
 	// #ifndef _Wall_3_BCs_DS
 	// #define _Wall_3_BCs_DS
 	// #endif
-	#ifndef _Wall_3_BCs_NEE
-	#define _Wall_3_BCs_NEE
+//
+	// #ifndef _Wall_3_BCs_NEE
+	// #define _Wall_3_BCs_NEE
+	// #endif
+//
+	#ifndef _Wall_3_BCs_BB
+	#define _Wall_3_BCs_BB
 	#endif
 #endif
 //-------------------------------Force model------------------------------
@@ -97,13 +102,13 @@
 // #endif
 //----------------------------------------------------------------------------
 
-// #ifndef _OUTPUT_L2NORM_ERROR_FLIP
-// #define _OUTPUT_L2NORM_ERROR_FLIP
-// #endif
+#ifndef _OUTPUT_L2NORM_ERROR_FLIP
+#define _OUTPUT_L2NORM_ERROR_FLIP
+#endif
 
-// #ifndef _ARK_NOHUP_FLIP	//Flip on for server
-// #define _ARK_NOHUP_FLIP
-// #endif
+ // #ifndef _ARK_NOHUP_FLIP	//Flip on for server
+ // #define _ARK_NOHUP_FLIP
+ // #endif
 
 
 //

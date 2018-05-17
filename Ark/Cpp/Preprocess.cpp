@@ -393,6 +393,21 @@ void AC_RisingBubble()
 		FaceArray[n].FactorAC();
 	}
 }
+void LayeredPoiseuilleAnalytical(double const xc,double const yc,double &u_A)
+{
+	using PhaseFieldAC::MuL;
+	using PhaseFieldAC::MuV;
+	using PhaseFieldAC::Gx;
+	double const H = Ly/2;
+	if(yc > 0)
+	{
+		u_A = Gx*H*H*(-(yc/H)*(yc/H)-yc/H*(MuV-MuL)/(MuV+MuL)+2*MuV/(MuV+MuL))/(2*MuV);
+	}
+	else
+	{
+		u_A = Gx*H*H*(-(yc/H)*(yc/H)-yc/H*(MuV-MuL)/(MuV+MuL)+2*MuL/(MuV+MuL))/(2*MuL);
+	}
+}
 void AC_LayeredPoiseuille()
 {
 	using PhaseFieldAC::PhiL;
@@ -559,7 +574,7 @@ void LidDrivenSquare()
 			CellArray[i].f.Tilde[k] = CellArray[i].f.Eqk];
 	}
 }*/
-void TaylorCouetteAnalyticalSolution(double x,double y,double &u_A)
+void TaylorCouetteAnalytical(double x,double y,double &u_A)
 {
 	const double eta = TC_r/TC_R;
 	const double A = -W_i*eta*eta/(1.0 - eta*eta), B = W_i*TC_r*TC_r/(1.0 - eta*eta);
