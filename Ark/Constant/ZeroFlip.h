@@ -52,7 +52,7 @@
 #endif
 
 #ifndef _MESHFILE_NAME_ARK
-#define _MESHFILE_NAME_ARK "_10_Car_Blend_Poiseuille_LBM"
+#define _MESHFILE_NAME_ARK "100_10_Car_Blend_Poiseuille_LBM"
 #endif
 //----------------Boundary Condition Macro------------------
 
@@ -74,13 +74,13 @@
 	// #define _Wall_3_BCs_DS
 	// #endif
 //
-	// #ifndef _Wall_3_BCs_NEE
-	// #define _Wall_3_BCs_NEE
-	// #endif
-//
-	#ifndef _Wall_3_BCs_BB
-	#define _Wall_3_BCs_BB
+	#ifndef _Wall_3_BCs_NEE
+	#define _Wall_3_BCs_NEE
 	#endif
+//
+	// #ifndef _Wall_3_BCs_BB
+	// #define _Wall_3_BCs_BB
+	// #endif
 #endif
 //-------------------------------Force model------------------------------
 

@@ -25,8 +25,37 @@ extern void TaylorCouetteAnalytical(double x,double y,double &u_A);
 
 extern void AnalyticalForceDrivenTG(double x,double y,double &u_A, double &v_A,double &p_A);
 
-extern void LayeredPoiseuilleAnalytical(double const xc,double const yc,double &u_A);
+extern void LayeredPoiseuilleAnalytical(double const xyz,double &u_A);
 
+
+void oss_XXX(ostringstream& oss_r,const string &folder,const string &suffix,double const &t)
+{
+	oss_r << "../FlowField/"<<folder<<"/Time" <<t<<"."<<suffix;
+}
+void FileOpen(ofstream &OutFile_XXX,ostringstream &oss_XXX,string const &s)
+{
+	OutFile_XXX.open(oss_XXX.str().c_str());
+	if(!OutFile_XXX)
+	{
+		cout <<"  "<< ("OutFile_" + s + " open failed") << endl; 
+		printErrorMessage(__LINE__,__FILE__,__func__);
+		getchar();
+		return;
+	}
+	OutFile_XXX << setiosflags(ios::scientific) << setprecision(Out_precision);
+}
+void FileOpenAppend(ofstream &OutFile_XXX,ostringstream &oss_XXX,string const &s)
+{
+	OutFile_XXX.open(oss_XXX.str().c_str(),ios::app);
+	if(!OutFile_XXX)
+	{
+		cout <<"  "<< ("OutFile_" + s + " open failed") << endl; 
+		printErrorMessage(__LINE__,__FILE__,__func__);
+		getchar();
+		return;
+	}
+	OutFile_XXX << setiosflags(ios::scientific) << setprecision(Out_precision);
+}
 void OutputCase()
 {
 	ofstream OutFile_Case("../FlowField/Case.ark");
@@ -97,38 +126,38 @@ void OutputCase()
 	OutFile_Case.close();
 //
 }
-void Output_Convergence()
-{
-	ostringstream oss_L2;
-	oss_L2 <<"../Convergence/L2_uvp_mu"<<Mu0<<"_Re"<<Re<<"_"<<NL<<_MESHFILE_NAME_ARK<<".dat"; 
-	ofstream OutFile_L2(oss_L2.str().c_str());
-	if(!OutFile_L2)
-	{
-		_PRINT_ERROR_MSG_FLIP
-		cout <<"OutFile_L2 file open failed"<<endl;
-		getchar();
-	}
-//---------------------------------------------------------------------
-	ostringstream oss_SumRho;
-	oss_SumRho << "../Convergence/SumRho_mu"<<Mu0<<"_Re"<<Re<<"_"<<NL<<_MESHFILE_NAME_ARK<<".dat";
-	ofstream OutFile_SumRho(oss_SumRho.str().c_str());
-	if(!OutFile_SumRho)
-	{
-		_PRINT_ERROR_MSG_FLIP
-		cout <<"OutFile_SumRho file open failed"<<endl;
-		getchar();
-	}
-//---------------------------------------------------------------------
-	ostringstream oss_Residual;
-	oss_Residual <<"../Convergence/Residual_mu"<<Mu0<<"_Re"<<Re<<"_"<<NL<<_MESHFILE_NAME_ARK<<".dat";
-	ofstream OutFile_Residual(oss_Residual.str().c_str());
-	if(!OutFile_Residual)
-	{
-		_PRINT_ERROR_MSG_FLIP
-		cout <<"OutFile_Residual open failed"<<endl;
-		getchar();
-	}
-}
+// void Output_Convergence()
+// {
+// 	ostringstream oss_L2;
+// 	oss_L2 <<"../FlowField/Convergence/L2_uvp_mu"<<Mu0<<"_Re"<<Re<<"_"<<NL<<_MESHFILE_NAME_ARK<<".dat"; 
+// 	ofstream OutFile_L2(oss_L2.str().c_str());
+// 	if(!OutFile_L2)
+// 	{
+// 		_PRINT_ERROR_MSG_FLIP
+// 		cout <<"OutFile_L2 file open failed"<<endl;
+// 		getchar();
+// 	}
+// //---------------------------------------------------------------------
+// 	ostringstream oss_SumRho;
+// 	oss_SumRho << "../FlowField/Convergence/SumRho_mu"<<Mu0<<"_Re"<<Re<<"_"<<NL<<_MESHFILE_NAME_ARK<<".dat";
+// 	ofstream OutFile_SumRho(oss_SumRho.str().c_str());
+// 	if(!OutFile_SumRho)
+// 	{
+// 		_PRINT_ERROR_MSG_FLIP
+// 		cout <<"OutFile_SumRho file open failed"<<endl;
+// 		getchar();
+// 	}
+// //---------------------------------------------------------------------
+// 	ostringstream oss_Residual;
+// 	oss_Residual <<"../FlowField/Convergence/Residual_mu"<<Mu0<<"_Re"<<Re<<"_"<<NL<<_MESHFILE_NAME_ARK<<".dat";
+// 	ofstream OutFile_Residual(oss_Residual.str().c_str());
+// 	if(!OutFile_Residual)
+// 	{
+// 		_PRINT_ERROR_MSG_FLIP
+// 		cout <<"OutFile_Residual open failed"<<endl;
+// 		getchar();
+// 	}
+// }
 void TaylorGreen_L2Norm(double const &t,double &L2_uv, double &L2_p)
 {
 	double u_A, v_A, p_A, du, dv, dp; 
@@ -147,7 +176,7 @@ void TaylorGreen_L2Norm(double const &t,double &L2_uv, double &L2_p)
 	L2_uv = sqrt(Sumdudv/Sumuv_A);
 	L2_p  = sqrt(Sumdp/Sump_A);
 }
-void TaylorCouette_L2Norm(double const &t,double &L2_uv)
+void TaylorCouette_L2Norm(double &L2_uv)
 {
 	double u_A, du;
 	double  Sumdudv = 0.0,Sumuv_A = 0.0;
@@ -160,13 +189,13 @@ void TaylorCouette_L2Norm(double const &t,double &L2_uv)
 	}
 	L2_uv = sqrt(Sumdudv/Sumuv_A);
 }
-void LayeredPoiseuille_L2Norm(double const &t,double &L2_uv)
+void LayeredPoiseuille_L2Norm(double &L2_uv)
 {
 	double u_A, du;
 	double  Sumdudv = 0.0,Sumuv_A = 0.0;
 	for(int i =0;i < Cells;++i)
 	{
-		LayeredPoiseuilleAnalytical(CellArray[i].xc,CellArray[i].yc,u_A);
+		LayeredPoiseuilleAnalytical(CellArray[i].yc,u_A);
 		du = CellArray[i].MsQ().U - u_A;
 		Sumdudv += du*du;
 		Sumuv_A += u_A*u_A;
@@ -194,10 +223,10 @@ void ForceDrivenTaylorGreen_L2Norm(double &L2_uv, double &L2_p)
 void Output_L2Norm(double const &t,double &L2_uv, double &L2_p)
 {	
 	//ForceDrivenTaylorGreen_L2Norm(L2_uv,L2_p);
-	//TaylorCouette_L2Norm(t,L2_uv);
-	LayeredPoiseuille_L2Norm(t,L2_uv);
+	//TaylorCouette_L2Norm(L2_uv);
+	LayeredPoiseuille_L2Norm(L2_uv);
 	ostringstream oss_L2;
-	oss_L2 <<"../Convergence/L2_uvp_mu"<<Mu0<<"_Re"<<Re<<"_"<<NL<<_MESHFILE_NAME_ARK<<".dat";
+	oss_L2 <<"../FlowField/Convergence/L2_uvp_mu"<<Mu0<<"_Re"<<Re<<"_"<<_MESHFILE_NAME_ARK<<".dat";
 	ofstream OutFile_L2(oss_L2.str().c_str(),ofstream::app);
 	if(!OutFile_L2)
 	{
@@ -212,7 +241,7 @@ void Output_L2Norm(double const &t,double &L2_uv, double &L2_p)
 void Output_SumRho(double t)
 {
 	ostringstream oss_SumRho;
-	oss_SumRho << "../Convergence/SumRho_mu"<<Mu0<<"_Re"<<Re<<"_"<<NL<<_MESHFILE_NAME_ARK<<".dat";
+	oss_SumRho << "../FlowField/Convergence/SumRho_mu"<<Mu0<<"_Re"<<Re<<"_"<<_MESHFILE_NAME_ARK<<".dat";
 	ofstream OutFile_SumRho(oss_SumRho.str().c_str(),ofstream::app);
 	if(!OutFile_SumRho)
 	{
@@ -227,7 +256,7 @@ void Output_SumRho(double t)
 void Output_Residual(double t,double Residual)
 {
 	ostringstream oss_Residual;
-	oss_Residual <<"../Convergence/Residual_mu"<<Mu0<<"_Re"<<Re<<"_"<<NL<<_MESHFILE_NAME_ARK<<".dat";
+	oss_Residual <<"../FlowField/Convergence/Residual_mu"<<Mu0<<"_Re"<<Re<<"_"<<_MESHFILE_NAME_ARK<<".dat";
 	ofstream OutFile_Residual(oss_Residual.str().c_str(),ofstream::app);
 	if(!OutFile_Residual)
 	{
@@ -238,6 +267,50 @@ void Output_Residual(double t,double Residual)
 	OutFile_Residual << setiosflags(ios::scientific)<<setprecision(8);
 	OutFile_Residual << t <<"    "<<Residual<<endl;
 	OutFile_Residual.close();
+}
+void Output_MidX(int step)
+{
+	using PhaseFieldAC::centerX;
+	using PhaseFieldAC::RhoL;
+	using PhaseFieldAC::RhoV;
+	int const mid = 5;//static_cast<int>(centerX);
+	//int const mid = 1;
+	ostringstream oss_MidX;
+	oss_MidX <<"../FlowField/Convergence/"<<"MidX_"<<"Ma"<< Ma<<"_"
+					<<_MESHTYPE_ARK<<NL<<"_CFL"<<CFL<<"ratio_"<<RhoL/RhoV<<"step"<<step<<".dat";
+	ofstream OutFile_MidX(oss_MidX.str().c_str());
+	if(!OutFile_MidX)
+	{
+		_PRINT_ERROR_MSG_FLIP
+		cout <<"  "<<"OutFile_MidX open failed" << endl; 
+		getchar();
+		exit(-1);
+	}
+	OutFile_MidX<<std::setiosflags(ios::scientific)<<std::setprecision(20);
+	for(int k = 1;k < Nyp1;++k)
+	{
+		double u_A;
+		Cell_2D &cell = *CarCellArray[mid][k];
+		LayeredPoiseuilleAnalytical(cell.yc,u_A);
+		OutFile_MidX<<cell.yc<<fs<<cell.MsQ().U<<fs<<u_A<<endl;
+		// OutFile_MidX<<cell.yc<<fs
+		// 			<<cell.MsQ().U<<fs
+		// 			<<cell.MsQ().V<<fs
+		// 			<<cell.MsQ().Rho<<fs
+		// 			<<endl;
+		// OutFile_MidX<<cell.Face_C[1]->f.BhDt[0][0]<<fs
+		// 			<<cell.Face_C[1]->f.BhDt[0][1]<<fs
+		// 			<<cell.Face_C[1]->f.BhDt[0][2]<<fs
+		// 			<<cell.Face_C[1]->f.BhDt[0][3]<<fs
+		// 			<<cell.Face_C[1]->f.BhDt[0][4]<<fs
+		// 			<<cell.Face_C[1]->f.BhDt[0][5]<<fs
+		// 			<<cell.Face_C[1]->f.BhDt[0][6]<<fs
+		// 			<<cell.Face_C[1]->f.BhDt[0][7]<<fs
+		// 			<<cell.Face_C[1]->f.BhDt[0][8]<<fs
+		// 			<<cell.Face_C[1]->MsQh().Rho<<fs
+		// 			<<endl;
+	}
+
 }
 void Output_Flowfield(double const &t,int step)
 {
@@ -252,13 +325,15 @@ void Output_Flowfield(double const &t,int step)
 		getchar();
 		return;
 	}
-//	q<sub>x</sub>,q<sub>y</sub>,\
-//	<Greek>t</Greek><sub>xx</sub>,<Greek>t</Greek><sub>xy</sub>,<Greek>t</Greek><sub>yy</sub>,
+/*	q<sub>x</sub>,q<sub>y</sub>,\
+	<Greek>t</Greek><sub>xx</sub>,<Greek>t</Greek><sub>xy</sub>,<Greek>t</Greek><sub>yy</sub>,
+*/
 	ostringstream VarName,VarLocation,ZoneName,dataNE;
 	VarName << "VARIABLES = X,Y,<Greek>r</Greek>,U,V,p,T,\
 	<Greek>f</Greek>,\
-	<Greek>f</Greek><sub>x</sub>,<Greek>f</Greek><sub>y</sub>\n";
-	VarLocation <<"VarLocation=([1-2]=NODAL,[3-10]=CellCentered)\n";
+	<Greek>f</Greek><sub>x</sub>,<Greek>f</Greek><sub>y</sub>,\
+	Fx,Fy\n";
+	VarLocation <<"VarLocation=([1-2]=NODAL,[3-12]=CellCentered)\n";
 	ZoneName<<"ZONE T = Time" << t <<"_"<<"Mu"<<Mu0<<"\n";
 	dataNE<<"Nodes="<<Nodes<<", Elements="<<Cells<<", ZONETYPE=FEQuadrilateral\n";
 	string tecformat[5]={VarName.str().c_str(),
@@ -379,6 +454,18 @@ void Output_Flowfield(double const &t,int step)
 	for(int i = 0;i != Cells;++i)
 	{
 		OutFile_FlowField << CellArray[i].MsQ().Phi_y <<"   ";
+		if((i+1)%16 == 0)
+			OutFile_FlowField << "\n";
+	}
+	for(int i = 0;i != Cells;++i)
+	{
+		OutFile_FlowField << CellArray[i].MsQ().Fx <<"   ";
+		if((i+1)%16 == 0)
+			OutFile_FlowField << "\n";
+	}
+	for(int i = 0;i != Cells;++i)
+	{
+		OutFile_FlowField << CellArray[i].MsQ().Fy <<"   ";
 		if((i+1)%16 == 0)
 			OutFile_FlowField << "\n";
 	}
@@ -535,34 +622,6 @@ void Output_xcyc()
 }
 //----------------------------------------------DEBUG----------------------------------------
 #ifdef _ZERO_NDEBUG_FLIP
-void oss_XXX(ostringstream& oss_r,const string &folder,const string &suffix,double const &t)
-{
-	oss_r << "../FlowField/"<<folder<<"/Time" <<t<<"."<<suffix;
-}
-void FileOpen(ofstream &OutFile_XXX,ostringstream &oss_XXX,string const &s)
-{
-	OutFile_XXX.open(oss_XXX.str().c_str());
-	if(!OutFile_XXX)
-	{
-		_PRINT_ERROR_MSG_FLIP
-		cout <<"  "<< ("OutFile_" + s + " open failed") << endl; 
-		getchar();
-		return;
-	}
-	OutFile_XXX << setiosflags(ios::scientific) << setprecision(Out_precision);
-}
-void FileOpenAppend(ofstream &OutFile_XXX,ostringstream &oss_XXX,string const &s)
-{
-	OutFile_XXX.open(oss_XXX.str().c_str(),ios::app);
-	if(!OutFile_XXX)
-	{
-		_PRINT_ERROR_MSG_FLIP
-		cout <<"  "<< ("OutFile_" + s + " open failed") << endl; 
-		getchar();
-		return;
-	}
-	OutFile_XXX << setiosflags(ios::scientific) << setprecision(Out_precision);
-}
 void printCorners(Cell_2D *cellptr)
 {
 	cout <<*cellptr->use<<"    "<<cellptr->xc<<"    "<<cellptr->yc<<endl;

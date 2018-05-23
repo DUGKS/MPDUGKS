@@ -1,6 +1,8 @@
 #include <iostream>
+#include <string>
 #include "DUGKSDeclaration.h"
 //
+using std::string;
 using std::cout;
 using std::endl;
 
@@ -24,9 +26,9 @@ void UniformFlow()
 			{
 				CellArray[n].f.Tilde[i][j]  = CellArray[n].f.Eq[i][j];
 //isothermal
-#ifndef _ARK_ISOTHERMAL_FLIP
+				#ifndef _ARK_ISOTHERMAL_FLIP
 				CellArray[n].g.Tilde[i][j]  = CellArray[n].g.Eq[i][j];
-#endif
+				#endif
 			}
 		}
 		for(int n = 0;n < Faces;++n)
@@ -393,19 +395,19 @@ void AC_RisingBubble()
 		FaceArray[n].FactorAC();
 	}
 }
-void LayeredPoiseuilleAnalytical(double const xc,double const yc,double &u_A)
+void LayeredPoiseuilleAnalytical(double const xyz,double &u_A)
 {
 	using PhaseFieldAC::MuL;
 	using PhaseFieldAC::MuV;
 	using PhaseFieldAC::Gx;
 	double const H = Ly/2;
-	if(yc > 0)
+	if(xyz > 0)
 	{
-		u_A = Gx*H*H*(-(yc/H)*(yc/H)-yc/H*(MuV-MuL)/(MuV+MuL)+2*MuV/(MuV+MuL))/(2*MuV);
+		u_A = Gx*H*H*(-(xyz/H)*(xyz/H)-xyz/H*(MuV-MuL)/(MuV+MuL)+2*MuV/(MuV+MuL))/(2*MuV);
 	}
 	else
 	{
-		u_A = Gx*H*H*(-(yc/H)*(yc/H)-yc/H*(MuV-MuL)/(MuV+MuL)+2*MuL/(MuV+MuL))/(2*MuL);
+		u_A = Gx*H*H*(-(xyz/H)*(xyz/H)-xyz/H*(MuV-MuL)/(MuV+MuL)+2*MuL/(MuV+MuL))/(2*MuL);
 	}
 }
 void AC_LayeredPoiseuille()
@@ -417,14 +419,14 @@ void AC_LayeredPoiseuille()
 	using PhaseFieldAC::aPhi;
 	using PhaseFieldAC::bPhi;
 	using PhaseFieldAC::W_InterFace;
-	double const MidX = 5,MidY = 0;
+	double const MidY = 0;
 	MacroQuantity init(Rho0,U0,V0,p0,T0,Lambda0,Mu0);
 	LoopPS(Cells)
 	{
 		CellArray[n].MsQ() = init;
 		#ifdef _ARK_ALLENCAHN_FLIP
-		CellArray[n].MsQ().Phi = 0.5*(PhiL+PhiV) + 0.5*(PhiL-PhiV)*tanh((-2*CellArray[n].yc)/W_InterFace);
-		CellArray[n].MsQ().Rho = 0.5*(RhoL+RhoV) + 0.5*(RhoL-RhoV)*tanh((-2*CellArray[n].yc)/W_InterFace);		CellArray[n].h.tau = PhaseFieldAC::TauMass;
+		CellArray[n].MsQ().Phi = 0.5*(PhiL+PhiV) + 0.5*(PhiL-PhiV)*tanh((MidY-2*CellArray[n].yc)/W_InterFace);
+		CellArray[n].MsQ().Rho = 0.5*(RhoL+RhoV) + 0.5*(RhoL-RhoV)*tanh((MidY-2*CellArray[n].yc)/W_InterFace);		CellArray[n].h.tau = PhaseFieldAC::TauMass;
 		CellArray[n].FactorAC();
 		#else
 		cout <<"idiocy!!!"<<endl;
@@ -749,3 +751,69 @@ void TaylorCouetteInitialization()
 // 	}
 // #endif
 // }
+void SelfCheck()
+{
+//
+	#if defined _FLUX_SCHEME_CD_ARK && defined _FLUX_SCHEME_UW_ARK
+	{
+		_PRINT_ERROR_MSG_FLIP
+		cout <<"Fatal Error : Flux Scheme collision"<<endl;
+		getchar();
+		exit(0);
+	}
+	#endif
+	#if !defined _FLUX_SCHEME_CD_ARK && !defined _FLUX_SCHEME_UW_ARK
+	{
+		_PRINT_ERROR_MSG_FLIP
+		cout <<"Fatal Error : Flux Scheme Empty"<<endl;
+		getchar();
+		exit(0);
+	}
+	#endif
+	#ifdef _Wall_3_BCs_NEE
+	string _bc_ark = _BC_ARK;
+	if("NEE" != _bc_ark)
+	{
+		_PRINT_ERROR_MSG_FLIP
+		cout <<"\"NEE\" != _BC_ARK"<<endl;
+		getchar();
+	}
+	#endif
+	#ifdef _Wall_3_BCs_DS
+	string _bc_ark = _BC_ARK;
+	if("DS" != _BC_ARK)
+	{
+		_PRINT_ERROR_MSG_FLIP
+		cout <<"\"DS\" != _BC_ARK"<<endl;
+		getchar();
+	}
+	#endif
+//
+	#if defined _FLUX_SCHEME_CD_ARK
+	string flux_scheme = _FLUX_SCHEME_ARK;
+		if("CD" != flux_scheme)
+		{
+			_PRINT_ERROR_MSG_FLIP
+			cout <<"\"CD\" != _FLUX_SCHEME_ARK"<<endl;
+			getchar();
+		}
+	#elif defined _FLUX_SCHEME_UW_ARK
+	string flux_scheme = _FLUX_SCHEME_ARK;
+		if("UW" != flux_scheme)
+		{
+			_PRINT_ERROR_MSG_FLIP
+			cout <<"\"UW\" != _FLUX_SCHEME_ARK"<<endl;
+			getchar();
+		}
+	#endif
+	string meshType = _MESHTYPE_ARK;
+	if("Quad" == meshType || "Tri" == meshType)
+	{
+		if("CD" == flux_scheme)
+		{
+			_PRINT_ERROR_MSG_FLIP
+			cout <<"\"UW\" != _FLUX_SCHEME_ARK"<<endl;
+			getchar();
+		}
+	}
+}

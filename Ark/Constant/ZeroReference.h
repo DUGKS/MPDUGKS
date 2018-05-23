@@ -4,7 +4,7 @@
 #include <cmath>
 #include "ZeroFlip.h"
 
-//----------------------Mesh file---------------
+//----------------------Mesh Information---------------
 const int 
 
 Nx = 10,

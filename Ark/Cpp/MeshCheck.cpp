@@ -311,11 +311,7 @@ int MeshCheck()
 			_PRINT_ERROR_MSG_FLIP
 			getchar();
 		}
-		LoopPS(Faces)
-		{
-			Face_2D &face = FaceArray[n];
-			zoneCheck(face);
-		}
+		zoneCheck(FaceArray[i]);
 		#endif
 		if(2 == FaceArray[i].bc_type)
 		{
@@ -636,7 +632,9 @@ int MeshCheck()
 	ShadowCellCheck(V_InletFaceNum,V_InletShadowCA,"V_InletShadowCA");
 	cout <<"Cell Check Done" <<endl;
 	_PRINT_SPLITLINE_ARK
+	cout <<nl;
 	#ifdef _CARTESIAN_MESH_FLIP
+	printSplitLine();
 	cout <<"Catesian Cell Checking..." <<endl;
 	LoopPS(Faces)
 	{
@@ -852,6 +850,8 @@ int MeshCheck()
 		exit(0);
 	}
 	cout <<"Catesian Cell Check Done" <<endl;
+	_PRINT_SPLITLINE_ARK
+	cout<<nl;
 	#endif
 	return 0;
 }

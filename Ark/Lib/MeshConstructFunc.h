@@ -58,6 +58,13 @@ double validDigits(double &in)
 }
 void ConstructNodes(int* const &ptrHexLine,std::ifstream &InFile_Mesh)
 {
+	if(ptrHexLine[2] != Nodes)
+	{
+		printSplitLine();
+		cout <<"Nodes number get from body doesn't match with head."<<nl;
+		printErrorMessage(__LINE__,__FILE__,__func__);
+		printSplitLine(nl);
+	}
 	InFile_Mesh >> std::dec;
 	for(int i = 0;i != Nodes;++i)
 	{
@@ -105,6 +112,13 @@ void ConstructCells(int* const &ptrHexLine,const int &count)
 }
 void ConstructCells(int* const &ptrHexLine,std::ifstream &InFile_Mesh)
 {
+	if(ptrHexLine[2] != Cells)
+	{
+		printSplitLine();
+		cout <<"Cells number get from body doesn't match with head."<<nl;
+		printErrorMessage(__LINE__,__FILE__,__func__);
+		printSplitLine(nl);
+	}	
 	int tmp;
 	for(int i = 0;i != Cells;++i)
 	{

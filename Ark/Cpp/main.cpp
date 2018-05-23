@@ -92,12 +92,8 @@ extern void printCorners(Cell_2D *cellptr);
 #endif
 int main()
 {
-	ostringstream oss_MeshName;
-	oss_MeshName <<NL<< _MESHFILE_NAME_ARK;
-	string MeshName(oss_MeshName.str().c_str());
-	cout <<MeshName<<endl;
+	string MeshName(_MESHFILE_NAME_ARK);
 	SelfCheck();
-	Output_Convergence();
 	#include "CreatMesh.h"
 //- - - - - - - - -Mesh- - - - - - - - - - - - -
 	// MeshConstruct(MeshName);
@@ -116,10 +112,9 @@ int main()
 	AllocateResource();
 	Grad_LSMatrix();
 	MeshCheck();
-	#ifdef _ZERO_NDEBUG_FLIP
-	MeshOutput(MeshName);
-	#endif
+
 //-------------------Initialization-------------------
+	#include "ZeroCondition.h"
 	//UniformFlow();
 	//LidDrivenSquare();
 	//ShockStructure();
@@ -132,7 +127,7 @@ int main()
 	//SCMP_Drop();
 	//AC_Drop();
 	//AC_RisingBubble();
-	AC_LayeredPoiseuille();
+	//AC_LayeredPoiseuille();
 //------------------Solve-------------------
 	#ifndef _ZERO_NDEBUG_FLIP
 	DUGKS2DSolver();
@@ -140,84 +135,9 @@ int main()
 //------------------Afterprocess----------------
 	DeallocateResource();
 	#ifdef _ZERO_NDEBUG_FLIP
+	MeshOutput(MeshName);
 	getchar();
 	#endif
-}
-void SelfCheck()
-{
-//
-	#if defined _FLUX_SCHEME_CD_ARK && defined _FLUX_SCHEME_UW_ARK
-	{
-		_PRINT_ERROR_MSG_FLIP
-		cout <<"Fatal Error : Flux Scheme collision"<<endl;
-		getchar();
-		exit(0);
-	}
-	#endif
-	#if !defined _FLUX_SCHEME_CD_ARK && !defined _FLUX_SCHEME_UW_ARK
-	{
-		_PRINT_ERROR_MSG_FLIP
-		cout <<"Fatal Error : Flux Scheme Empty"<<endl;
-		getchar();
-		exit(0);
-	}
-	#endif
-	#ifdef _Wall_3_BCs_NEE
-	if("NEE" != _BC_ARK)
-	{
-		_PRINT_ERROR_MSG_FLIP
-		cout <<"\"NEE\" != _BC_ARK"<<endl;
-		getchar();
-	}
-	#endif
-	#ifdef _Wall_3_BCs_DS
-	if("DS" != _BC_ARK)
-	{
-		_PRINT_ERROR_MSG_FLIP
-		cout <<"\"DS\" != _BC_ARK"<<endl;
-		getchar();
-	}
-	#endif
-//
-	#ifdef _CARTESIAN_MESH_FLIP
-		if("CD" != _FLUX_SCHEME_ARK)
-		{
-			_PRINT_ERROR_MSG_FLIP
-			cout <<"\"CD\" != _FLUX_SCHEME_ARK"<<endl;
-			getchar();
-		}
-	#else
-		if("UW" != _FLUX_SCHEME_ARK)
-		{
-			_PRINT_ERROR_MSG_FLIP
-			cout <<"\"UW\" != _FLUX_SCHEME_ARK"<<endl;
-			getchar();
-		}
-	#endif
-	if("Quad" == _MESHTYPE_ARK || "Tri" == _MESHTYPE_ARK)
-	{
-		if("UW" != _FLUX_SCHEME_ARK)
-		{
-			_PRINT_ERROR_MSG_FLIP
-			cout <<"\"UW\" != _FLUX_SCHEME_ARK"<<endl;
-			getchar();
-		}
-	}
-	else if("Car" == _MESHTYPE_ARK)
-	{
-		if("CD" != _FLUX_SCHEME_ARK)
-		{
-			_PRINT_ERROR_MSG_FLIP
-			cout <<"\"CD\" != _FLUX_SCHEME_ARK"<<endl;
-			getchar();
-		}
-	}
-	else
-	{
-		_PRINT_ERROR_MSG_FLIP
-		cout <<"Unknown Mesh Type"<<endl;
-		getchar();
-	}
 }
 //
 // void AllocateInCells(const int& CellNum,Cell_2D* &ptrCell)

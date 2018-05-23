@@ -83,7 +83,7 @@ int MeshConstruct(const string &s)
 	}
 //
 	int *ptrHexLine = new int[MeshPerLine];
-	int line = 0, count = 0, index = 0,body = 0,FaceCount = 0;
+	int count = 0, index = 0,body = 0;
 	string string_line;
 	while(getline(InFile_Mesh,string_line))
 	{

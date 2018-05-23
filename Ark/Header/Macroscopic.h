@@ -4,7 +4,7 @@
 #include "ZeroConstant.h"
 // declaration
 class MacroQuantity;
-// arithmetic operators
+//-------------friend arithmetic operators-------------------------
 MacroQuantity operator-(const MacroQuantity &lhs,const MacroQuantity &rhs);
 MacroQuantity operator+(const MacroQuantity &lhs,const MacroQuantity &rhs);
 MacroQuantity operator*(double a,const MacroQuantity &rhs);
@@ -50,11 +50,13 @@ public:
 	inline double calcTau(){return Mu/(Rho*RT);}
 	inline void calcMu()
 	{
-		Mu=PhaseFieldAC::MuV + (Phi-PhaseFieldAC::PhiV)*(PhaseFieldAC::MuL-PhaseFieldAC::MuV);
-		// Mu = PhaseFieldAC::MuV*PhaseFieldAC::MuL/
-		// 	( (Phi-PhaseFieldAC::PhiV)*PhaseFieldAC::MuV 
-		// 	+ (PhaseFieldAC::PhiL-Phi)*PhaseFieldAC::MuL
-		// 	);
+		//Mu=PhaseFieldAC::MuV + (Phi-PhaseFieldAC::PhiV)*(PhaseFieldAC::MuL-PhaseFieldAC::MuV);
+		//
+		Mu = PhaseFieldAC::MuV*PhaseFieldAC::MuL/
+			( 
+			  (Phi-PhaseFieldAC::PhiV)*PhaseFieldAC::MuV 
+			+ (PhaseFieldAC::PhiL-Phi)*PhaseFieldAC::MuL
+			);
 	}
 	//
 	inline void calcRho_xRho_y()

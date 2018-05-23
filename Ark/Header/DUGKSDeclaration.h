@@ -60,6 +60,11 @@ extern void Update_phi_h(Face_2D& face,int i,int j);
 
 extern void Update_phiFlux_h(Face_2D &face,int i,int j);
 
+//-----------------------output-------------------------
+extern void printSplitLine(char c = ' ');
+
+extern void printErrorMessage(int line,const char *file,const char *func);
+
 //
 template<typename T>
 inline int MeshIndex(const T &End,const T &Beg)

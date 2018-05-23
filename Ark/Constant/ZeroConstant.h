@@ -1,7 +1,7 @@
 #ifndef _ZERO_INFORMATION_H_
 #define _ZERO_INFORMATION_H_
 
-#include "D2Q9AC.h"
+#include "D2Q9.h"
 
 //------------------------------Normalized Parameters----------------------------
 const double 
@@ -82,20 +82,22 @@ namespace PhaseFieldAC
 	Kappa = 3.0*Sigma*W_InterFace/2;
 
 	const double 
-	
+
 	PhiL = 1.0,	PhiV = 0.0,
 	
-	RhoL = 10.0,RhoV = 1.0,
+	RhoL = 1.0,RhoV = 1.0,
 
-	MuL = Mu0*RhoL,	MuV = Mu0*RhoV,
+	NuL  = Nu0, NuV  = Nu0/1000,
 
-	NuL  = Nu0, NuV  = Nu0,
+	MuL = NuL*RhoL,	MuV = NuV*RhoV,
 	
 	aPhi = (RhoL-RhoV)/(PhiL-PhiV), bPhi = RhoV-aPhi*PhiV,
 
 	Uc = 1E-4,
 
-	Gx = 4.0*Uc*(MuL+MuV)/(Ly*Ly),Gy = 0.0,
+	Gx = 4.0*Uc*(MuL+MuV)/(Ly*Ly),
+
+	Gy = 0.0,
 	
 	TauMass = M_Phi/RT,
 
@@ -113,7 +115,7 @@ namespace PhaseFieldAC
 
 	Eo = Gx*(RhoL-RhoV)*4*radius*radius/Sigma,
 
-	ReMP = sqrt(Gy*RhoL*(RhoL-RhoV)*diameter)*diameter/MuL; 
+	ReMP = sqrt(Gx*RhoL*(RhoL-RhoV)*diameter)*diameter/MuL; 
 }
 
 /*const int
@@ -147,7 +149,7 @@ ConvergenceControl = 1000, //SumRho,SumT
 
 ResidualControl = 1000, //print to screen
 
-writeFileControl = 1000;
+writeFileControl = 20000;
 
 double const
 

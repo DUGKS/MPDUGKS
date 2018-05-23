@@ -6,17 +6,6 @@ using namespace PhaseFieldAC;
 #include <iostream>
 using std::cout;
 
-// namespace D2Q9{
-
-// double const xi_u[DV_Qv] = {0,1,1,0,-1,-1,-1,0,1};
-
-// double const xi_v[DV_Qv] = {0,0,1,1,1,0,-1,-1,-1};
-
-// int const _BB[DV_Qv] = {0,3,4,1,2,7,8,5,6};
-
-// }
-
-
 extern double * const xi_u = new double[DV_Qv];
 
 extern double * const xi_v = new double[DV_Qv];
@@ -29,12 +18,8 @@ const double omega[DV_Qv]={4.0/9.0,
 
 double const KForce = 1;
 
-double const Kp = RT*9/5.0;
+//double const Kp = RT*9/5.0;
 
-inline double dynamicViscosity(double phi)
-{
-	return (MuV + (phi-PhiV)*(MuL-MuV));
-}
 
 void DiscreteVelocityAssign()
 {
@@ -60,27 +45,26 @@ void Update_phi_Eq(Cell_2D &cell)
 		#endif
 		//
 		//cell.f.Eq[i][j] = omega[j]*(cell.MsQ().p + cell.MsQ().Rho*RT*GAMMA);
-		cell.f.Eq[i][j] = omega[j]*(cell.MsQ().p/RT + cell.MsQ().Rho*GAMMA)
-						 - (!j)*cell.MsQ().p/RT;
+		cell.f.Eq[i][j] = omega[j]*(cell.MsQ().p + cell.MsQ().Rho*GAMMA*RT);
 		//
 		#ifdef _ARK_FORCE_FLIP
-		// cell.f.So[i][j] = 
-		// omega[j]*
-		// (
-		// (1+GAMMA)*((xi_u[QuIndex]-cell.MsQ().U)*(cell.MsQ().Fx) + (xi_v[j]-cell.MsQ().V)*(cell.MsQ().Fy))
-		// +
-		// GAMMA*((xi_u[QuIndex]-cell.MsQ().U)*(cell.MsQ().Rho_x) + (xi_v[j]-cell.MsQ().V)*(cell.MsQ().Rho_y))
-		// );
 		cell.f.So[i][j] = 
 		omega[j]*
 		(
-			// (
-			// 	(xi_u[QuIndex]-cell.MsQ().U)*(cell.MsQ().Fx)
-			// +   (xi_v[j]-cell.MsQ().V)*(cell.MsQ().Fy)
-			// )*(1+GAMMA)/RT
-			(xi_u[QuIndex]*(cell.MsQ().Fx) + xi_v[j]*cell.MsQ().Fy)/RT
-		+	u1*(xi_u[QuIndex]*(cell.MsQ().Rho_x) + xi_v[j]*(cell.MsQ().Rho_y))
+		(1+GAMMA)*((xi_u[j]-cell.MsQ().U)*(cell.MsQ().Fx) + (xi_v[j]-cell.MsQ().V)*(cell.MsQ().Fy))
+		+
+		GAMMA*RT*((xi_u[j]-cell.MsQ().U)*(cell.MsQ().Rho_x) + (xi_v[j]-cell.MsQ().V)*(cell.MsQ().Rho_y))
 		);
+		// cell.f.So[i][j] = 
+		// omega[j]*
+		// (
+		// 	// (
+		// 	// 	(xi_u[QuIndex]-cell.MsQ().U)*(cell.MsQ().Fx)
+		// 	// +   (xi_v[j]-cell.MsQ().V)*(cell.MsQ().Fy)
+		// 	// )*(1+GAMMA)/RT
+		// 	(xi_u[QuIndex]*(cell.MsQ().Fx) + xi_v[j]*cell.MsQ().Fy)/RT
+		// +	u1*(xi_u[QuIndex]*(cell.MsQ().Rho_x) + xi_v[j]*(cell.MsQ().Rho_y))
+		// );
 		#endif
 	}
 }
@@ -99,28 +83,27 @@ void Update_phi_Eqh(Face_2D &face)
 		face.h.EqhDt[i][j] = omega[j]*face.MsQh().Phi*(1.0 + u1);
 		#endif
 		//
-		//face.f.EqhDt[i][j] = omega[j]*(face.MsQh().p + face.MsQh().Rho*RT*GAMMA);
-		face.f.EqhDt[i][j] = omega[j]*(face.MsQh().p/RT + face.MsQh().Rho*GAMMA)
-							 - (!j)*face.MsQh().p/RT;
+		face.f.EqhDt[i][j] = omega[j]*(face.MsQh().p + face.MsQh().Rho*RT*GAMMA);
+		//face.f.EqhDt[i][j] = omega[j]*(face.MsQh().p/RT + face.MsQh().Rho*GAMMA)
 //
 		#ifdef _ARK_FORCE_FLIP
-		// face.f.SohDt[i][j] = 
-		// omega[j]*
-		// (
-		// (1+GAMMA)*((xi_u[QuIndex]-face.MsQh().U)*face.MsQh().Fx+(xi_v[j]-face.MsQh().V)*(face.MsQh().Fy))
-		// +
-		// GAMMA*((xi_u[QuIndex]-face.MsQh().U)*face.MsQh().Rho_x+(xi_v[j]-face.MsQh().V)*(face.MsQh().Rho_y))
-		// );
 		face.f.SohDt[i][j] = 
 		omega[j]*
 		(
-			// (
-			//     (xi_u[QuIndex]-face.MsQh().U)*face.MsQh().Fx
-			//  +  (xi_v[j]-face.MsQh().V)*face.MsQh().Fy
-			// )*(1+GAMMA)/RT
-			(xi_u[QuIndex]*face.MsQh().Fx + xi_v[j]*face.MsQh().Fy)/RT
-		+	u1*(xi_u[QuIndex]*face.MsQh().Rho_x + xi_v[j]*face.MsQh().Rho_y)
+		(1+GAMMA)*((xi_u[QuIndex]-face.MsQh().U)*face.MsQh().Fx+(xi_v[j]-face.MsQh().V)*(face.MsQh().Fy))
+		+
+		GAMMA*RT*((xi_u[QuIndex]-face.MsQh().U)*face.MsQh().Rho_x+(xi_v[j]-face.MsQh().V)*(face.MsQh().Rho_y))
 		);
+		// face.f.SohDt[i][j] = 
+		// omega[j]*
+		// (
+		// 	// (
+		// 	//     (xi_u[QuIndex]-face.MsQh().U)*face.MsQh().Fx
+		// 	//  +  (xi_v[j]-face.MsQh().V)*face.MsQh().Fy
+		// 	// )*(1+GAMMA)/RT
+		// 	(xi_u[QuIndex]*face.MsQh().Fx + xi_v[j]*face.MsQh().Fy)/RT
+		// +	u1*(xi_u[QuIndex]*face.MsQh().Rho_x + xi_v[j]*face.MsQh().Rho_y)
+		// );
 		#endif
 	}
 }
@@ -133,8 +116,8 @@ void Update_MacroVar(Cell_2D& cell)
 	//
 	cell.MsQ().Rho  = aPhi*cell.MsQ().Phi + bPhi;
 //
-	cell.MsQ().U    = (IntegralGH(DV_Qv,cell.f.Tilde[0],xi_u))/(cell.MsQ().Rho);
-	cell.MsQ().V    = (IntegralGH(DV_Qv,cell.f.Tilde[0],xi_v))/(cell.MsQ().Rho);
+	cell.MsQ().U    = (IntegralGH(DV_Qv,cell.f.Tilde[0],xi_u))/(cell.MsQ().Rho*RT);
+	cell.MsQ().V    = (IntegralGH(DV_Qv,cell.f.Tilde[0],xi_v))/(cell.MsQ().Rho*RT);
 	#ifdef _ARK_FORCE_FLIP
 	cell.MsQ().U += hDt*(cell.MsQ().Fx)/cell.MsQ().Rho;
 	cell.MsQ().V += hDt*(cell.MsQ().Fy)/cell.MsQ().Rho;
@@ -142,11 +125,12 @@ void Update_MacroVar(Cell_2D& cell)
 //
 	// cell.MsQ().U = 0.0;
 	// cell.MsQ().V = 0.0;
+	cell.MsQ().p = IntegralGH(DV_Qv,cell.f.Tilde[0]) + ::hDt*cell.MsQ().RhoXUYV()*RT;
 
-	cell.MsQ().p = IntegralGH(DV_Qv,cell.f.Tilde[0]) - cell.f.Tilde[0][0];
-	cell.MsQ().p += (hDt*cell.MsQ().RhoXUYV()
-			  			+ cell.MsQ().Rho*omega[0]*cell.MsQ().SqUV()*Lambda0);//to be solved +
-	cell.MsQ().p *= Kp;
+	// cell.MsQ().p = IntegralGH(DV_Qv,cell.f.Tilde[0]) - cell.f.Tilde[0][0];
+	// cell.MsQ().p += (hDt*cell.MsQ().RhoXUYV()
+	// 		  			+ cell.MsQ().Rho*omega[0]*cell.MsQ().SqUV()*Lambda0);//to be solved +
+	// cell.MsQ().p *= Kp;
 //
 	cell.MsQ().calcMu();
 	cell.f.tau = cell.MsQ().calcTau();
@@ -193,8 +177,8 @@ void Update_MacroVar_h(Face_2D& face)
 	//
 	face.MsQh().Rho  = aPhi*face.MsQh().Phi + bPhi;
 //
-	face.MsQh().U    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_u)/(face.MsQh().Rho);
-	face.MsQh().V    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_v)/(face.MsQh().Rho);
+	face.MsQh().U    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_u)/(face.MsQh().Rho*RT);
+	face.MsQh().V    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_v)/(face.MsQh().Rho*RT);
 	#ifdef _ARK_FORCE_FLIP
 	face.MsQh().U += 0.5*hDt*face.MsQh().Fx/face.MsQh().Rho;
 	face.MsQh().V += 0.5*hDt*face.MsQh().Fy/face.MsQh().Rho;
@@ -202,13 +186,14 @@ void Update_MacroVar_h(Face_2D& face)
 
 	// face.MsQh().U = 0.0;
 	// face.MsQh().V = 0.0;
+	face.MsQh().p = IntegralGH(DV_Qv,face.f.BhDt[0]) + 0.5*hDt*RT*face.MsQh().RhoXUYV();
 
-	face.MsQh().p    = IntegralGH(DV_Qv,face.f.BhDt[0])-face.f.BhDt[0][0];
-	face.MsQh().p   += (
-					0.5*hDt*(face.MsQh().RhoXUYV())
-				    + omega[0]*face.MsQh().Rho*(face.MsQh().SqUV())*Lambda0//to be solved +
-				  );
-	face.MsQh().p   *= Kp;
+	// face.MsQh().p    = IntegralGH(DV_Qv,face.f.BhDt[0])-face.f.BhDt[0][0];
+	// face.MsQh().p   += (
+	// 				0.5*hDt*(face.MsQh().RhoXUYV())
+	// 			    + omega[0]*face.MsQh().Rho*(face.MsQh().SqUV())*Lambda0//to be solved +
+	// 			  );
+	// face.MsQh().p   *= Kp;
 //
 	face.MsQh().calcMu();
 	face.f.tauh = face.MsQh().calcTau();

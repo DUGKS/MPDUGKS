@@ -1,14 +1,6 @@
 #include "DUGKSDeclaration.h"
 #include "GaussHermite.h"
 
-namespace D2Q9{
-
-double const xi_u[DV_Qv] = {0,1,1,0,-1,-1,-1,0,1};
-
-double const xi_v[DV_Qv] = {0,0,1,1,1,0,-1,-1,-1};
-
-}
-
 extern double * const xi_u = new double[DV_Qv];
 
 extern double * const xi_v = new double[DV_Qv];
@@ -31,16 +23,16 @@ void DiscreteVelocityAssign()
 }
 void Update_phi_Eq(Cell_2D &cell)
 {
-	double uu,u1,u2;
+	double uu,u1;
 	uu = cell.MsQ().U*cell.MsQ().U + cell.MsQ().V*cell.MsQ().V;
 	for(int i = 0;i < DV_Qu;++i)
 	for(int j = 0;j < DV_Qv;++j)
 	{
 		u1 = (xi_u[j]*cell.MsQ().U + xi_v[j]*cell.MsQ().V)/RT;
-		//cell.f.Eq[i][j] = omega[j]*(cell.MsQ().Rho + Rho0*(u1 + 0.5*u1*u1 - uu*Lambda0));
-		cell.f.Eq[i][j] = omega[j]*cell.MsQ().Rho*(1.0 + u1 + 0.5*u1*u1 - uu*Lambda0);
+		cell.f.Eq[i][j] = omega[j]*(cell.MsQ().Rho + Rho0*(u1 + 0.5*u1*u1 - uu*Lambda0));
+		//cell.f.Eq[i][j] = omega[j]*cell.MsQ().Rho*(1.0 + u1 + 0.5*u1*u1 - uu*Lambda0);
 		#ifdef _ARK_FORCE_FLIP
-		cell.f.So[i][j] = 
+		cell.f.So[i][j] =
 		(cell.MsQ().Fx*(xi_u[j]-cell.MsQ().U)+cell.MsQ().Fy*(xi_v[j]-cell.MsQ().V))
 		*cell.f.Eq[i][j]/cell.MsQ().Rho/RT;
 		#endif
@@ -48,16 +40,16 @@ void Update_phi_Eq(Cell_2D &cell)
 }
 void Update_phi_Eqh(Face_2D &face)
 {
-	double uu,u1,u2;
+	double uu,u1;
 	uu = face.MsQh().U*face.MsQh().U + face.MsQh().V*face.MsQh().V;
 	for(int i = 0;i < DV_Qu;++i)
 	for(int j = 0;j < DV_Qv;++j)
 	{
 		u1 = (xi_u[j]*face.MsQh().U + xi_v[j]*face.MsQh().V)/RT; 
-		//face.fEqh[i][j] = omega[j]*(face.MsQh().Rho + Rho0*(u1 + 0.5*u1*u1 - uu*Lambda0));
-		face.f.EqhDt[i][j] = omega[j]*face.MsQh().Rho*(1.0 + u1 + 0.5*u1*u1 - uu*Lambda0);
+		face.f.EqhDt[i][j] = omega[j]*(face.MsQh().Rho + Rho0*(u1 + 0.5*u1*u1 - uu*Lambda0));
+		//face.f.EqhDt[i][j] = omega[j]*face.MsQh().Rho*(1.0 + u1 + 0.5*u1*u1 - uu*Lambda0);
 		#ifdef _ARK_FORCE_FLIP
-		face.f.SohDt[i][j] = 
+		face.f.SohDt[i][j] =
 		(face.MsQh().Fx*(xi_u[j]-face.MsQh().U) + face.MsQh().Fy*(xi_v[j]-face.MsQh().V))
 		*face.f.EqhDt[i][j]/face.MsQh().Rho/RT;
 		#endif
@@ -80,29 +72,35 @@ void Update_phi_Eqh(Face_2D &face)
 void Update_MacroVar(Cell_2D& cell)
 {
 	cell.MsQ().Rho  = IntegralGH(DV_Qv,cell.f.Tilde[0]);
-	cell.MsQ().U    = (IntegralGH(DV_Qv,cell.f.Tilde[0],xi_u))/cell.MsQ().Rho;
-	cell.MsQ().V    = (IntegralGH(DV_Qv,cell.f.Tilde[0],xi_v))/cell.MsQ().Rho;	
-	// cell.MsQ().U    = (vectorDot(cell.f.Tilde[0],xi_u))/cell.MsQ().Rho;
-	// cell.MsQ().V    = (vectorDot(cell.f.Tilde[0],xi_v))/cell.MsQ().Rho;
+	// cell.MsQ().U    = (IntegralGH(DV_Qv,cell.f.Tilde[0],xi_u))/cell.MsQ().Rho;
+	// cell.MsQ().V    = (IntegralGH(DV_Qv,cell.f.Tilde[0],xi_v))/cell.MsQ().Rho;	
+	// #ifdef _ARK_FORCE_FLIP
+	// cell.MsQ().U += hDt*cell.MsQ().Fx/cell.MsQ().Rho;
+	// cell.MsQ().V += hDt*cell.MsQ().Fy/cell.MsQ().Rho;
+	// #endif
+	cell.MsQ().U    = (IntegralGH(DV_Qv,cell.f.Tilde[0],xi_u))/Rho0;
+	cell.MsQ().V    = (IntegralGH(DV_Qv,cell.f.Tilde[0],xi_v))/Rho0;	
 	#ifdef _ARK_FORCE_FLIP
-	cell.MsQ().U += hDt*cell.MsQ().Fx/cell.MsQ().Rho;
-	cell.MsQ().V += hDt*cell.MsQ().Fy/cell.MsQ().Rho;
+	cell.MsQ().U += hDt*cell.MsQ().Fx/Rho0;
+	cell.MsQ().V += hDt*cell.MsQ().Fy/Rho0;
 	#endif
-	//cell.MsQ().U    = (vectorDot(cell.f.Tilde[0],xi_u))/Rho0;
-	//cell.MsQ().V    = (vectorDot(cell.f.Tilde[0],xi_v))/Rho0;
 	//cell.p    = 0.5*(cell.MsQ().Rho - Rho0)/Lambda0;
 }
 void Update_MacroVar_h(Face_2D& face)
 {
 	face.MsQh().Rho  = IntegralGH(DV_Qv,face.f.BhDt[0]);
-	face.MsQh().U    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_u)/face.MsQh().Rho;
-	face.MsQh().V    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_v)/face.MsQh().Rho;
+	// face.MsQh().U    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_u)/face.MsQh().Rho;
+	// face.MsQh().V    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_v)/face.MsQh().Rho;
+	// #ifdef _ARK_FORCE_FLIP
+	// face.MsQh().U += 0.5*hDt*face.MsQh().Fx/face.MsQh().Rho;
+	// face.MsQh().V += 0.5*hDt*face.MsQh().Fy/face.MsQh().Rho;
+	// #endif
+	face.MsQh().U    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_u)/Rho0;
+	face.MsQh().V    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_v)/Rho0;
 	#ifdef _ARK_FORCE_FLIP
-	face.MsQh().U += 0.5*hDt*face.MsQh().Fx/face.MsQh().Rho;
-	face.MsQh().V += 0.5*hDt*face.MsQh().Fy/face.MsQh().Rho;
+	face.MsQh().U += 0.5*hDt*face.MsQh().Fx/Rho0;
+	face.MsQh().V += 0.5*hDt*face.MsQh().Fy/Rho0;
 	#endif
-	//face.MsQh().U    = (vectorDot(face.f.BhDt[0],xi_u))/Rho0;
-	//face.MsQh().V    = (vectorDot(face.f.BhDt[0],xi_v))/Rho0;
 	// face.p_h    = 0.5*(face.MsQh().Rho - Rho0)/Lambda0;
 }
 void Update_DVDF_Source(Cell_2D &cell)

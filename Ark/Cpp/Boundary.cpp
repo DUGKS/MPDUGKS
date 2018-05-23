@@ -55,7 +55,7 @@ void ExtrapolationfBP(Cell_2D *shadowCell,Cell_2D const*neighb,Cell_2D const*nex
 void WallShadowC_fBP(Cell_2D &shadowCell)
 {
 // used for GradfBP
-	int const TOP = top,BOTTOM = bottom,LEFT = left,RIGHT = right;
+	unsigned const TOP = top,BOTTOM = bottom,LEFT = left,RIGHT = right;
 	#ifdef _CARTESIAN_MESH_FLIP
 		if(TOP == shadowCell.zone)
 		{
@@ -162,29 +162,32 @@ void Wall_3_NEE(Face_2D &face)
 	Wall_3_BB(face);
 	//Update_phiFlux_h(face);
 }
-void Wall_3_BounceBack(Face_2D &face)
-{
-
-}
 void fluxCheck(Face_2D const* faceptr)
 {
 	Face_2D const &face = *faceptr;
-	double fluxhSum = 0.0,fluxfSum = 0.0;
+	#ifdef _ARK_ALLENCAHN_FLIP
+	double hfluxSum = 0.0;
+	#endif
+	double ffluxSum = 0.0;
 	LoopVS(DV_Qu,DV_Qv)
 	{
-		fluxhSum += face.h.hDt[i][j];
-		fluxfSum += face.f.hDt[i][j];
+		#ifdef _ARK_ALLENCAHN_FLIP
+		hfluxSum += face.h.hDt[i][j];
+		#endif
+		ffluxSum += face.f.hDt[i][j];
 	}
-	if(!EqualZero(fluxhSum))
+	#ifdef _ARK_ALLENCAHN_FLIP
+	if(!EqualZero(hfluxSum))
 	{
 		cout <<"hhhhhhhhhhhhhhhhh"<<endl;
-		cout <<"xf : "<<face.xf<<fs<<"yf : "<<face.yf<<fs<<"fluxhSum : "<<fluxhSum<<endl;
+		cout <<"xf : "<<face.xf<<fs<<"yf : "<<face.yf<<fs<<"hfluxSum : "<<hfluxSum<<endl;
 		getchar();
 	}
-	if(!EqualZero(fluxfSum))
+	#endif
+	if(!EqualZero(ffluxSum))
 	{
 		
-		cout <<"xf : "<<face.xf<<fs<<"yf : "<<face.yf<<fs<<"fluxfSum : "<<fluxfSum<<endl;
+		cout <<"xf : "<<face.xf<<fs<<"yf : "<<face.yf<<fs<<"ffluxSum : "<<ffluxSum<<endl;
 		getchar();
 	}
 }

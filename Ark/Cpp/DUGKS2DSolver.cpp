@@ -29,6 +29,8 @@ extern void Output_SumRho(double t);
 
 extern void Output_Residual(double t,double Residual);
 
+extern void Output_MidX(int step);
+
 //------------------------Boundary.cpp----------------------
 
 extern void P_Inlet_4_Boundary();
@@ -92,6 +94,10 @@ extern void Output_phi_Bh(Face_2D &face,double t);
 extern void LeastSquareDebug();
 
 extern void Grad_VS_LS(Cell_2D *center);
+
+extern void Grad_VS_6points(Cell_2D *center);
+
+extern void Grad_VS_4points(Cell_2D *center);
 //------------------------------------------------------------------------------
 
 void Update_phi_BP(Cell_2D& cell);
@@ -166,8 +172,10 @@ while(ResidualPer1k > RESIDUAL)
 	#pragma omp for schedule(guided)
 	LoopPS(Cells)
 	{
-	Grad_VS_LS(&CellArray[n]);
-	// Zero_PartialDerivatives(CellArray[n]);
+	//Grad_VS_LS(&CellArray[n]);
+	Grad_VS_6points(&CellArray[n]);
+	//Grad_VS_4points(&CellArray[n]);
+	//Zero_PartialDerivatives(CellArray[n]);
 	}
 	#endif
 //-------------------------------Flux-------------------------------------
@@ -272,12 +280,15 @@ while(ResidualPer1k > RESIDUAL)
 			#endif
 		}
 		if(step%ResidualControl == 0)
+		{
 			Update_Residual(step);
+		}
 	}
 }
 }
 	IntegralShearStress();
 	Output_Flowfield((step)*dt,step);
+	Output_MidX(step);
 }
 
 void Zero_PartialDerivatives(Cell_2D &cell)
@@ -359,14 +370,15 @@ double VenkatakrishnanExpression(double a,double b)
 void VenkatakrishnanFluxLimiter(Cell_2D &cell,int const &i,int const &j)
 {
 	double GradfBPDotDelta[4],LfBP[4];
-	double GradgBPDotDelta[4],LgBP[4];
+	double MaxfBP = cell.f.BarP[i][j],MinfBP = cell.f.BarP[i][j];
+	double MinfBPLimiter = 1;
 //
 	// double MaxfBP = -1E+5,MinfBP = -MaxfBP, MaxgBP = -1E+5,MingBP = -MaxgBP;
-	double MaxfBP = cell.f.BarP[i][j],MinfBP = cell.f.BarP[i][j];
 	#ifndef _ARK_ISOTHERMAL_FLIP
+	double GradgBPDotDelta[4],LgBP[4];
 	double MaxgBP = cell.g.BarP[i][j],MingBP = cell.g.BarP[i][j];
+	double MingBPLimiter = 1;
 	#endif
-	double MinfBPLimiter = 1,MingBPLimiter = 1;
 //	
 	for(int iFace = 0;iFace < cell.celltype;++iFace)
 	{
@@ -470,12 +482,27 @@ void UW_Interior_phi_Bh(Face_2D& face,Cell_2D* ptr_C,int const &i,int const &j)
 					  + (dx*ptr_C->g.BarP_x[i][j] + dy*ptr_C->g.BarP_y[i][j]);
 	#endif
 }
+void UW_Interior_phi_Bh(Face_2D& face,int const &i,int const &j)
+{
+	#ifdef _ARK_ALLENCAHN_FLIP
+	face.h.BhDt[i][j] = 0.5*(face.owner->h.BarP[i][j]+face.neigh->h.BarP[i][j]);
+	#endif
+	//				  
+	face.f.BhDt[i][j] = 0.5*(face.owner->f.BarP[i][j]+face.neigh->f.BarP[i][j]);
+	//isothermal flip
+	#ifndef _ARK_ISOTHERMAL_FLIP
+	face.g.BhDt[i][j] = 0.5*(face.owner->g.BarP[i][j]+face.neigh->g.BarP[i][j]);
+	#endif
+}
 void CD_Interior_phi_Bh(Face_2D &face,int i,int j)
 {
-	double _hBP_xF,_hBP_yF,
-		   _fBP_xF,_fBP_yF,
-		   _gBP_xF,_gBP_yF;
-	{
+	#ifdef _ARK_ALLENCAHN_FLIP
+	double _hBP_xF = 1000,_hBP_yF = 1000;
+	#endif
+	double _fBP_xF = 1000,_fBP_yF = 1000;
+	#ifndef _ARK_ISOTHERMAL_FLIP
+	double _gBP_xF = 1000,_gBP_yF = 1000;
+	#endif
 		if(EqualZero(face.Vx))
 		{
 			#ifdef _ARK_ALLENCAHN_FLIP
@@ -540,8 +567,7 @@ void CD_Interior_phi_Bh(Face_2D &face,int i,int j)
 		#ifndef _ARK_ISOTHERMAL_FLIP
 		face.g.BhDt[i][j] = 0.5*(face.owner->g.BarP[i][j] + face.neigh->g.BarP[i][j])
 				- hDt*(_gBP_xF*(xi_u[QuIndex]) + _gBP_yF*xi_v[j]);
-		#endif
-	}	
+		#endif	
 }
 void Update_phi_fBh(Face_2D &face)
 {
@@ -551,10 +577,12 @@ void Update_phi_fBh(Face_2D &face)
 		#if defined _FLUX_SCHEME_CD_ARK
 			CD_Interior_phi_Bh(face,i,j);
 		#elif defined _FLUX_SCHEME_UW_ARK
-		if(face.xi_n_dS[i][j] >= 0)
+		if(face.xi_n_dS[i][j] > 0)
 			UW_Interior_phi_Bh(face,face.owner,i,j);
-		else
+		else if(face.xi_n_dS[i][j] < 0)
 			UW_Interior_phi_Bh(face,face.neigh,i,j);
+		else
+			UW_Interior_phi_Bh(face,i,j);
 		#else 
 			exit(-1);
 		#endif
@@ -604,7 +632,9 @@ void Update_phi_T(Cell_2D &cell)
 	// for(int j = 0;j < DV_Qv;++j)
 	LoopVS(DV_Qu,DV_Qv)
 	{
+		#ifdef _ARK_ALLENCAHN_FLIP
 		double hFluxSum = 0.0;
+		#endif
 		double fFluxSum = 0;
 //isothermal flip
 		#ifndef _ARK_ISOTHERMAL_FLIP
@@ -624,15 +654,15 @@ void Update_phi_T(Cell_2D &cell)
 		}
 		#ifdef _ARK_ALLENCAHN_FLIP
 		cell.h.Tilde[i][j] = aTP*cell.h.BarP[i][j] - bTP*cell.h.Tilde[i][j]
-							 + cell.DtSlashVolume*hFluxSum;
+							+ cell.DtSlashVolume*hFluxSum;
 		#endif
 		//
 		cell.f.Tilde[i][j] = aTP*cell.f.BarP[i][j] - bTP*cell.f.Tilde[i][j]
-							 + cell.DtSlashVolume*fFluxSum;
+							+ cell.DtSlashVolume*fFluxSum;
 //isothermal flip
 		#ifndef _ARK_ISOTHERMAL_FLIP
 		cell.g.Tilde[i][j] = aTP*cell.g.BarP[i][j] - bTP*cell.g.Tilde[i][j]
-							 + cell.DtSlashVolume*gFluxSum;
+							+ cell.DtSlashVolume*gFluxSum;
 		#endif
 	}
 }
@@ -678,7 +708,10 @@ void Update_Residual(int step)
 		ResidualPer1k = sqrt(Sumdudv/(SumUV + 1.0E-30));
 		Output_Residual(step*dt,ResidualPer1k);
 		if(step%writeFileControl == 0)
-		Output_Flowfield(step*dt, step);
+		{
+			Output_Flowfield(step*dt, step);
+			Output_MidX(step);
+		}
 		//Output_xcyc();
 	#ifndef _ARK_NOHUP_FLIP
 		cout << setiosflags(ios::scientific) << setprecision(12);
