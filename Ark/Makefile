@@ -2,7 +2,7 @@ vpath %.h Header:Lib
 vpath %.cpp Cpp:Lib
 
 Target = PFDUGKS
-QModel = D2Q9Fak
+QModel = D2Q9AC
 
 CC = icpc
 

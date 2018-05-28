@@ -87,7 +87,7 @@ namespace PhaseFieldAC
 	
 	RhoL = 1.0,RhoV = 1.0,
 
-	NuL  = Nu0, NuV  = Nu0/1000,
+	NuL  = Nu0, NuV  = Nu0/10,
 
 	MuL = NuL*RhoL,	MuV = NuV*RhoV,
 	
@@ -153,7 +153,7 @@ writeFileControl = 20000;
 
 double const
 
-RESIDUAL = 1.0E-8;
+RESIDUAL = 1.0E-6;
 
 //used for Cartesian Mesh;
 

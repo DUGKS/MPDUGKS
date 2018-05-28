@@ -47,17 +47,8 @@ public:
 	inline double dPhiU(){return Phi*U-prevPhiU;}
 	inline double dPhiV(){return Phi*V-prevPhiV;}
 	inline double RhoXUYV(){return Rho_x*U+Rho_y*V;}
-	inline double calcTau(){return Mu/(Rho*RT);}
-	inline void calcMu()
-	{
-		//Mu=PhaseFieldAC::MuV + (Phi-PhaseFieldAC::PhiV)*(PhaseFieldAC::MuL-PhaseFieldAC::MuV);
-		//
-		Mu = PhaseFieldAC::MuV*PhaseFieldAC::MuL/
-			( 
-			  (Phi-PhaseFieldAC::PhiV)*PhaseFieldAC::MuV 
-			+ (PhaseFieldAC::PhiL-Phi)*PhaseFieldAC::MuL
-			);
-	}
+	double calcTau();
+	void calcMu();
 	//
 	inline void calcRho_xRho_y()
 	{

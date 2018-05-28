@@ -24,15 +24,15 @@
 #define _MESHTYPE_ARK "Car"
 #endif
 
-// #ifndef _FLUX_SCHEME_UW_ARK
-// #define _FLUX_SCHEME_UW_ARK "UW"	
-// #define _FLUX_SCHEME_ARK _FLUX_SCHEME_UW_ARK
-// #endif
-
-#ifndef _FLUX_SCHEME_CD_ARK
-#define _FLUX_SCHEME_CD_ARK "CD"
-#define _FLUX_SCHEME_ARK _FLUX_SCHEME_CD_ARK
+#ifndef _FLUX_SCHEME_UW_ARK
+#define _FLUX_SCHEME_UW_ARK "UW"	
+#define _FLUX_SCHEME_ARK _FLUX_SCHEME_UW_ARK
 #endif
+
+// #ifndef _FLUX_SCHEME_CD_ARK
+// #define _FLUX_SCHEME_CD_ARK "CD"
+// #define _FLUX_SCHEME_ARK _FLUX_SCHEME_CD_ARK
+// #endif
 
 //BB = bounce back,NEE = non-equilibrium extrapolation,DS = diffusive scattering
 #ifndef _BC_ARK

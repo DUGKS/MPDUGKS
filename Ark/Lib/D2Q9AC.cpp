@@ -31,11 +31,27 @@ double const KForce = 1;
 
 double const Kp = RT*9/5.0;
 
-inline double dynamicViscosity(double phi)
+void MacroQuantity::calcMu()
 {
-	return (MuV + (phi-PhiV)*(MuL-MuV));
+		// Mu=PhaseFieldAC::MuV + (Phi-PhaseFieldAC::PhiV)*(PhaseFieldAC::MuL-PhaseFieldAC::MuV);
+		
+		Mu = PhaseFieldAC::MuV*PhaseFieldAC::MuL/
+			( 
+			  (Phi-PhaseFieldAC::PhiV)*PhaseFieldAC::MuV 
+			+ (PhaseFieldAC::PhiL-Phi)*PhaseFieldAC::MuL
+			);
+		// Mu = PhaseFieldAC::NuV*PhaseFieldAC::NuL/
+		// 	( 
+		// 	  (Phi-PhaseFieldAC::PhiV)*PhaseFieldAC::NuV 
+		// 	+ (PhaseFieldAC::PhiL-Phi)*PhaseFieldAC::NuL
+		// 	);
+		// Mu *= Rho;
+		// Mu = PhaseFieldAC::NuV + (Phi-PhaseFieldAC::PhiV)*(PhaseFieldAC::NuL-PhaseFieldAC::NuV);
 }
-
+double MacroQuantity::calcTau()
+{
+	return Mu/(Rho*RT);
+}
 void DiscreteVelocityAssign()
 {
 	for(int j = 0;j < DV_Qv;++j)
@@ -61,26 +77,23 @@ void Update_phi_Eq(Cell_2D &cell)
 		//
 		//cell.f.Eq[i][j] = omega[j]*(cell.MsQ().p + cell.MsQ().Rho*RT*GAMMA);
 		cell.f.Eq[i][j] = omega[j]*(cell.MsQ().p/RT + cell.MsQ().Rho*GAMMA)
-						 - (!j)*cell.MsQ().p/RT;
+						 - static_cast<int>(!j)*cell.MsQ().p/RT;
 		//
 		#ifdef _ARK_FORCE_FLIP
-		// cell.f.So[i][j] = 
-		// omega[j]*
-		// (
-		// (1+GAMMA)*((xi_u[QuIndex]-cell.MsQ().U)*(cell.MsQ().Fx) + (xi_v[j]-cell.MsQ().V)*(cell.MsQ().Fy))
-		// +
-		// GAMMA*((xi_u[QuIndex]-cell.MsQ().U)*(cell.MsQ().Rho_x) + (xi_v[j]-cell.MsQ().V)*(cell.MsQ().Rho_y))
-		// );
 		cell.f.So[i][j] = 
 		omega[j]*
 		(
-			// (
-			// 	(xi_u[QuIndex]-cell.MsQ().U)*(cell.MsQ().Fx)
-			// +   (xi_v[j]-cell.MsQ().V)*(cell.MsQ().Fy)
-			// )*(1+GAMMA)/RT
-			(xi_u[QuIndex]*(cell.MsQ().Fx) + xi_v[j]*cell.MsQ().Fy)/RT
-		+	u1*(xi_u[QuIndex]*(cell.MsQ().Rho_x) + xi_v[j]*(cell.MsQ().Rho_y))
+		(1+GAMMA)*((xi_u[j]-cell.MsQ().U)*(cell.MsQ().Fx) + (xi_v[j]-cell.MsQ().V)*(cell.MsQ().Fy))
+		/RT
+		+
+		GAMMA*((xi_u[j]-cell.MsQ().U)*(cell.MsQ().Rho_x) + (xi_v[j]-cell.MsQ().V)*(cell.MsQ().Rho_y))
 		);
+		// cell.f.So[i][j] = 
+		// omega[j]*
+		// (
+		// 		(xi_u[QuIndex]*(cell.MsQ().Fx) + xi_v[j]*cell.MsQ().Fy)/RT
+		// +	u1*(xi_u[QuIndex]*(cell.MsQ().Rho_x) + xi_v[j]*(cell.MsQ().Rho_y))
+		// );
 		#endif
 	}
 }
@@ -101,26 +114,23 @@ void Update_phi_Eqh(Face_2D &face)
 		//
 		//face.f.EqhDt[i][j] = omega[j]*(face.MsQh().p + face.MsQh().Rho*RT*GAMMA);
 		face.f.EqhDt[i][j] = omega[j]*(face.MsQh().p/RT + face.MsQh().Rho*GAMMA)
-							 - (!j)*face.MsQh().p/RT;
+							 - static_cast<int>(!j)*face.MsQh().p/RT;
 //
 		#ifdef _ARK_FORCE_FLIP
-		// face.f.SohDt[i][j] = 
-		// omega[j]*
-		// (
-		// (1+GAMMA)*((xi_u[QuIndex]-face.MsQh().U)*face.MsQh().Fx+(xi_v[j]-face.MsQh().V)*(face.MsQh().Fy))
-		// +
-		// GAMMA*((xi_u[QuIndex]-face.MsQh().U)*face.MsQh().Rho_x+(xi_v[j]-face.MsQh().V)*(face.MsQh().Rho_y))
-		// );
 		face.f.SohDt[i][j] = 
 		omega[j]*
 		(
-			// (
-			//     (xi_u[QuIndex]-face.MsQh().U)*face.MsQh().Fx
-			//  +  (xi_v[j]-face.MsQh().V)*face.MsQh().Fy
-			// )*(1+GAMMA)/RT
-			(xi_u[QuIndex]*face.MsQh().Fx + xi_v[j]*face.MsQh().Fy)/RT
-		+	u1*(xi_u[QuIndex]*face.MsQh().Rho_x + xi_v[j]*face.MsQh().Rho_y)
+		(1+GAMMA)*((xi_u[QuIndex]-face.MsQh().U)*face.MsQh().Fx+(xi_v[j]-face.MsQh().V)*(face.MsQh().Fy))
+		/RT
+		+
+		GAMMA*((xi_u[QuIndex]-face.MsQh().U)*face.MsQh().Rho_x+(xi_v[j]-face.MsQh().V)*(face.MsQh().Rho_y))
 		);
+		// face.f.SohDt[i][j] = 
+		// omega[j]*
+		// (
+		// 	(xi_u[QuIndex]*face.MsQh().Fx + xi_v[j]*face.MsQh().Fy)/RT
+		// +	u1*(xi_u[QuIndex]*face.MsQh().Rho_x + xi_v[j]*face.MsQh().Rho_y)
+		// );
 		#endif
 	}
 }
@@ -145,7 +155,7 @@ void Update_MacroVar(Cell_2D& cell)
 
 	cell.MsQ().p = IntegralGH(DV_Qv,cell.f.Tilde[0]) - cell.f.Tilde[0][0];
 	cell.MsQ().p += (hDt*cell.MsQ().RhoXUYV()
-			  			+ cell.MsQ().Rho*omega[0]*cell.MsQ().SqUV()*Lambda0);//to be solved +
+			  			- cell.MsQ().Rho*omega[0]*cell.MsQ().SqUV()*Lambda0);//to be solved +
 	cell.MsQ().p *= Kp;
 //
 	cell.MsQ().calcMu();
@@ -206,7 +216,7 @@ void Update_MacroVar_h(Face_2D& face)
 	face.MsQh().p    = IntegralGH(DV_Qv,face.f.BhDt[0])-face.f.BhDt[0][0];
 	face.MsQh().p   += (
 					0.5*hDt*(face.MsQh().RhoXUYV())
-				    + omega[0]*face.MsQh().Rho*(face.MsQh().SqUV())*Lambda0//to be solved +
+				    - omega[0]*face.MsQh().Rho*(face.MsQh().SqUV())*Lambda0//to be solved +
 				  );
 	face.MsQh().p   *= Kp;
 //

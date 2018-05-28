@@ -517,23 +517,23 @@ void AllocateCarCellArray()
 //
 	for(int n = 0;n < Cells;++n)
 	{
-		int i = std::round((CellArray[n].xc - X_Beg + 0.5*MinDx)/MinDx);
-		int j = std::round((CellArray[n].yc - Y_Beg + 0.5*MinDy)/MinDy);
+		int i = static_cast<int>(std::round((CellArray[n].xc - X_Beg + 0.5*MinDx)/MinDx));
+		int j = static_cast<int>(std::round((CellArray[n].yc - Y_Beg + 0.5*MinDy)/MinDy));
 		CarCellArray[i][j] = &CellArray[n];
 	}
 	#ifdef _PERIODIC_12_8_BCs_FLIP
 	for(int k = 0;k < PeriodicFaceNum;++k)
 	{
-		int i = std::round((PeriodicShadowCA[k].xc - X_Beg + 0.5*MinDx)/MinDx);
-		int j = std::round((PeriodicShadowCA[k].yc - Y_Beg + 0.5*MinDy)/MinDy);
+		int i = static_cast<int>(std::round((PeriodicShadowCA[k].xc - X_Beg + 0.5*MinDx)/MinDx));
+		int j = static_cast<int>(std::round((PeriodicShadowCA[k].yc - Y_Beg + 0.5*MinDy)/MinDy));
 		CarCellArray[i][j] = &PeriodicShadowCA[k];
 	}
 	#endif
 	#ifdef _Wall_3_BCs_FLIP
 	for(int k = 0;k < WallFaceNum;++k)
 	{
-		int i = std::round((WallShadowCA[k].xc - X_Beg + 0.5*MinDx)/MinDx);
-		int j = std::round((WallShadowCA[k].yc - Y_Beg + 0.5*MinDy)/MinDy);
+		int i = static_cast<int>(std::round((WallShadowCA[k].xc - X_Beg + 0.5*MinDx)/MinDx));
+		int j = static_cast<int>(std::round((WallShadowCA[k].yc - Y_Beg + 0.5*MinDy)/MinDy));
 		CarCellArray[i][j] = &WallShadowCA[k];
 	}
 	#endif

@@ -13,6 +13,27 @@ const double omega[DV_Qv]={4.0/9.0,
 
 double const KForce = 1;
 
+void MacroQuantity::calcMu()
+{
+		// Mu=PhaseFieldAC::MuV + (Phi-PhaseFieldAC::PhiV)*(PhaseFieldAC::MuL-PhaseFieldAC::MuV);
+		
+		// Mu = PhaseFieldAC::MuV*PhaseFieldAC::MuL/
+		// 	( 
+		// 	  (Phi-PhaseFieldAC::PhiV)*PhaseFieldAC::MuV 
+		// 	+ (PhaseFieldAC::PhiL-Phi)*PhaseFieldAC::MuL
+		// 	);
+		// Mu = PhaseFieldAC::NuV*PhaseFieldAC::NuL/
+		// 	( 
+		// 	  (Phi-PhaseFieldAC::PhiV)*PhaseFieldAC::NuV 
+		// 	+ (PhaseFieldAC::PhiL-Phi)*PhaseFieldAC::NuL
+		// 	);
+		// Mu *= Rho;
+		// Mu = PhaseFieldAC::NuV + (Phi-PhaseFieldAC::PhiV)*(PhaseFieldAC::NuL-PhaseFieldAC::NuV);
+}
+double MacroQuantity::calcTau()
+{
+	//return Mu/(Rho*RT);
+}
 void DiscreteVelocityAssign()
 {
 	for(int j = 0;j < DV_Qv;++j)

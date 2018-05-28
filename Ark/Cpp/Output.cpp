@@ -113,15 +113,19 @@ void OutputCase()
 				 <<PhaseFieldAC::ReMP<<"    =    Reynolds number"<<endl
 				 <<endl
 				 <<PhaseFieldAC::M_Phi<<"    =    mobility"<<endl
+				 <<PhaseFieldAC::TauMass<<"    =    mobility relaxition time"<<endl
 				 <<PhaseFieldAC::W_InterFace<<"    =    inteface width"<<endl
 				 <<PhaseFieldAC::Sigma<<"    =    Sigma(surface tension coefficient)"<<endl
 				 <<PhaseFieldAC::Beta<<"    =    Beta"<<endl
 				 <<PhaseFieldAC::Kappa<<"    =    Kappa"<<endl
 				 <<PhaseFieldAC::RhoL<<"    =    liquid density"<<endl
 				 <<PhaseFieldAC::RhoV<<"    =    vapor density"<<endl
+				 <<PhaseFieldAC::MuL<<"    =    liquid viscosity"<<endl
+				 <<PhaseFieldAC::MuV<<"    =    vapor viscosity"<<endl
 				 <<PhaseFieldAC::NuL<<"    =    liquid viscosity"<<endl
 				 <<PhaseFieldAC::NuV<<"    =    vapor viscosity"<<endl
-				 <<PhaseFieldAC::TauMass<<"    =    mobility relaxition time";
+				 <<PhaseFieldAC::RhoL/PhaseFieldAC::RhoV<<"    =    "<<"density ratio"<<endl
+				 <<PhaseFieldAC::MuL/PhaseFieldAC::MuV<<"    =    "<<"dynamic viscosity ratio";
 
 	OutFile_Case.close();
 //
