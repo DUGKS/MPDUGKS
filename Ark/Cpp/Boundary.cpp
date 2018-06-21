@@ -9,7 +9,10 @@ void P_Inlet_4_Boundary()
 		for(int i = 0;i < DV_Qu;++i)
 		for(int j = 0;j < DV_Qv;++j)
 		{
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			P_InletShadowCA[k].f.BarP[i][j] = P_InletShadowCA[k].Cell_C[0]->f.BarP[i][j];
+			#endif
 //isothermal flip
 			#ifndef _ARK_ISOTHERMAL_FLIP
 			P_InletShadowCA[k].g.BarP[i][j] = P_InletShadowCA[k].Cell_C[0]->g.BarP[i][j];
@@ -22,7 +25,10 @@ void P_Outlet_5_Boundary()
 		for(int i = 0;i < DV_Qu;++i)
 		for(int j = 0;j < DV_Qv;++j)
 		{
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			P_OutletShadowCA[k].f.BarP[i][j] = P_OutletShadowCA[k].Cell_C[0]->f.BarP[i][j];
+			#endif
 //isothermal flip
 			#ifndef _ARK_ISOTHERMAL_FLIP
 			P_OutletShadowCA[k].g.BarP[i][j] = P_OutletShadowCA[k].Cell_C[0]->g.BarP[i][j];
@@ -44,7 +50,10 @@ void ExtrapolationfBP(Cell_2D *shadowCell,Cell_2D const*neighb,Cell_2D const*nex
 		shadowCell->h.BarP[i][j] = 2*neighb->h.BarP[i][j] - nextNeighb->h.BarP[i][j];
 		#endif
 		//
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		shadowCell->f.BarP[i][j] = 2*neighb->f.BarP[i][j] - nextNeighb->f.BarP[i][j];
+		#endif
 		//
 		#ifndef _ARK_ISOTHERMAL_FLIP
 		shadowCell->g.BarP[i][j] = 2*neighb->g.BarP[i][j] - nextNeighb->g.BarP[i][j];
@@ -87,17 +96,20 @@ void WallShadowC_fBP(Cell_2D &shadowCell)
 		for(int i = 0;i < DV_Qu;++i)
 		for(int j = 0;j < DV_Qv;++j)
 		{
-		#ifdef _ARK_ALLENCAHN_FLIP
+			#ifdef _ARK_ALLENCAHN_FLIP
 			shadowCell.h.BarP[i][j] = shadowCell.h.Eq[i][j]
 			+ cell->h.aBP*(cell->h.Tilde[i][j] - cell->h.Eq[i][j]);
-		#endif
+			#endif
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			shadowCell.f.BarP[i][j] = shadowCell.f.Eq[i][j]
 			+ cell->f.aBP*(cell->f.Tilde[i][j] - cell->f.Eq[i][j]);
-	//isothermal flip
-		#ifndef _ARK_ISOTHERMAL_FLIP	
+			#endif
+			//isothermal flip
+			#ifndef _ARK_ISOTHERMAL_FLIP	
 			shadowCell.g.BarP[i][j] = shadowCell.g.Eq[i][j]
 			+ cell->g.aBP*(cell->g.Tilde[i][j] - cell->g.Eq[i][j]);
-		#endif
+			#endif
 		}
 	#endif
 }
@@ -114,7 +126,11 @@ void Wall_3_BB(Face_2D &face)
 			#ifdef _ARK_ALLENCAHN_FLIP
 			face.h.hDt[i][j] = face.h.hDt[i][jj];
 			#endif
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			face.f.hDt[i][j] = face.f.hDt[i][jj];
+			#endif
+			//!isothemal
 			#ifndef _ARK_ISOTHERMAL_FLIP
 			face.g.hDt[i][j] = face.g.hDt[i][jj];
 			#endif
@@ -138,8 +154,10 @@ void Wall_3_NEE(Face_2D &face)
 	#ifdef _ARK_ALLENCAHN_FLIP
 	double hNEq = 2.0*cell.h.tau/(2.0*cell.h.tau + ::dt);
 	#endif
-	//
+	//!momentum
+	#ifdef _ARK_MOMENTUM_FLIP
 	double fNEq = 2.0*cell.f.tau/(2.0*cell.f.tau + ::dt);
+	#endif
 	//
 	#ifndef _ARK_ISOTHERMAL_FLIP	
 	double gNEq = 2.0*cell.g.tau/(2.0*cell.g.tau + ::dt);
@@ -147,20 +165,22 @@ void Wall_3_NEE(Face_2D &face)
 	//
 	LoopVS(DV_Qu,DV_Qv)
 	{
-	#ifdef _ARK_ALLENCAHN_FLIP
+		#ifdef _ARK_ALLENCAHN_FLIP
 		face.h.hDt[i][j] = face.h.EqhDt[i][j]
 		+ hNEq*(cell.h.Tilde[i][j] - cell.h.Eq[i][j] + hDt*cell.h.So[i][j]);
-	#endif
+		#endif
+	//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		face.f.hDt[i][j] = face.f.EqhDt[i][j]
 		+ fNEq*(cell.f.Tilde[i][j] - cell.f.Eq[i][j] + hDt*cell.f.So[i][j]);
+		#endif
 	//isothermal flip
-	#ifndef _ARK_ISOTHERMAL_FLIP	
+		#ifndef _ARK_ISOTHERMAL_FLIP	
 		face.g.hDt[i][j] = face.g.EqhDt[i][j]
 		+ gNEq*(cell.g.Tilde[i][j] - cell.gEq[i][j] + hDt*cell.g.So[i][j]);
-	#endif
+		#endif
 	}
 	Wall_3_BB(face);
-	//Update_phiFlux_h(face);
 }
 void fluxCheck(Face_2D const* faceptr)
 {
@@ -168,26 +188,36 @@ void fluxCheck(Face_2D const* faceptr)
 	#ifdef _ARK_ALLENCAHN_FLIP
 	double hfluxSum = 0.0;
 	#endif
+	//!momentum
+	#ifdef _ARK_MOMENTUM_FLIP
 	double ffluxSum = 0.0;
+	#endif
 	LoopVS(DV_Qu,DV_Qv)
 	{
 		#ifdef _ARK_ALLENCAHN_FLIP
 		hfluxSum += face.h.hDt[i][j];
 		#endif
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		ffluxSum += face.f.hDt[i][j];
+		#endif
 	}
 	#ifdef _ARK_ALLENCAHN_FLIP
 	if(!EqualZero(hfluxSum))
 	{
-		cout <<"hhhhhhhhhhhhhhhhh"<<endl;
+		cout <<"hfluxSum of Wall Boundary is nonzero"<<endl;
 		cout <<"xf : "<<face.xf<<fs<<"yf : "<<face.yf<<fs<<"hfluxSum : "<<hfluxSum<<endl;
 		getchar();
 	}
 	#endif
+	//!momentum
+	#ifdef _ARK_MOMENTUM_FLIP
 	if(!EqualZero(ffluxSum))
 	{
 		
+		cout <<"ffluxSum of Wall Boundary is nonzero"<<endl;
 		cout <<"xf : "<<face.xf<<fs<<"yf : "<<face.yf<<fs<<"ffluxSum : "<<ffluxSum<<endl;
 		getchar();
 	}
+	#endif
 }

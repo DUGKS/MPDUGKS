@@ -21,20 +21,23 @@ void DeallocateARK(double** &f,int const Qu,int const Qv)
 	delete[] f;
 	f = nullptr;
 }
-Cell_2D::Cell_2D():use(new int(1))
+Cell_2D::Cell_2D():msq(new MacroQuantity()),use(new int(1))
 {
-	msq = new MacroQuantity();
 }
 Cell_2D::Cell_2D(const Cell_2D &rhs)
 {
 //
-#ifdef _ARK_ALLENCAHN_FLIP
+	#ifdef _ARK_ALLENCAHN_FLIP
 	h = rhs.h;
-#endif
+	#endif
+	//
+	#ifdef _ARK_MOMENTUM_FLIP
 	f = rhs.f;
-#ifndef _ARK_ISOTHERMAL_FLIP
+	#endif
+	//
+	#ifndef _ARK_ISOTHERMAL_FLIP
 	g = rhs.g;
-#endif
+	#endif
 //
 	msq = rhs.msq;
 //
@@ -53,8 +56,10 @@ Cell_2D& Cell_2D::operator=(const Cell_2D &rhs)
 		#ifdef _ARK_ALLENCAHN_FLIP
 		h = rhs.h;
 		#endif
-		//
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		f = rhs.f;
+		#endif
 		//
 		#ifndef _ARK_ISOTHERMAL_FLIP
 		g = rhs.g;
@@ -144,7 +149,11 @@ void Cell_2D::DVDF::setxBP()
 void Cell_2D::Factor()
 {
 //
+	//!momentum
+	#ifdef _ARK_MOMENTUM_FLIP
 	f.setxBP();
+	#endif
+	//!energy
 	#ifndef _ARK_ISOTHERMAL_FLIP
 	g.setxBP();
 	#endif
@@ -196,10 +205,9 @@ void Cell_2D::SetVolume()
 	DtSlashVolume = dt/volume;
 }
 //
-Face_2D::Face_2D():use(new int(1))
+Face_2D::Face_2D():msqh(new MacroQuantity()),use(new int(1))
 {
 	AllocateARK(xi_n_dS,Qu,Qv);
-	msqh = new MacroQuantity();
 }
 Face_2D::~Face_2D()
 {
@@ -236,7 +244,11 @@ void Face_2D::DVDF::setxh()
 }
 void Face_2D::Factor()
 {
+	//!momentum
+	#ifdef _ARK_MOMENTUM_FLIP
 	f.setxh();
+	#endif
+	//energy
 	#ifndef _ARK_ISOTHERMAL_FLIP
 	g.setxh();
 	#endif
@@ -247,23 +259,6 @@ void Face_2D::FactorAC()
 	h.setxh();
 	#endif
 }
-// void Face_2D::AllocateInFace()
-// {
-// 	AllocateARK(fh,Qu,Qv);
-// 	AllocateARK(fBh,Qu,Qv);
-// 	AllocateARK(fEqh,Qu,Qv);
-// //
-// #ifndef _ARK_ISOTHERMAL_FLIP
-// 	AllocateARK(gh,Qu,Qv);
-// 	AllocateARK(gBh,Qu,Qv);
-// 	AllocateARK(gEqh,Qu,Qv);
-// #endif
-// //
-// 	AllocateARK(xi_n_dS,Qu,Qv);
-// //
-// //
-// 	use = new int(1);
-// }
 void Face_2D::SetArea()
 {
 	xf = 0.5*(faceNodes[0]->xN + faceNodes[1]->xN);
@@ -278,6 +273,6 @@ void Face_2D::SetNormalV()
 {
 	double dy = (faceNodes[1]->yN - faceNodes[0]->yN), 
 	 	   dx = (faceNodes[1]->xN - faceNodes[0]->xN);
-	//SetZero(dx);SetZero(dy); 	 	   
+	SetZero(dx);SetZero(dy); 	 	   
 	Vx = dy/Area;Vy = -dx/Area;
 }

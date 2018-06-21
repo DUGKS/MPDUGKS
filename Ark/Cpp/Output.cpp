@@ -15,6 +15,8 @@ using std::map;
 using std::ios;
 using std::setprecision;
 
+extern char const DmQnName[];
+
 int const Out_precision = 12;
 
 int const IC = 198, JC = 197;
@@ -26,6 +28,8 @@ extern void TaylorCouetteAnalytical(double x,double y,double &u_A);
 extern void AnalyticalForceDrivenTG(double x,double y,double &u_A, double &v_A,double &p_A);
 
 extern void LayeredPoiseuilleAnalytical(double const xyz,double &u_A);
+
+extern double AnalyticalPhiAC_Drop(double const x,double const y);
 
 
 void oss_XXX(ostringstream& oss_r,const string &folder,const string &suffix,double const &t)
@@ -70,7 +74,7 @@ void OutputCase()
 				 <<_MESHTYPE_ARK<<"    =    Mesh Type"<<endl
 				 <<_FLUX_SCHEME_ARK<<"    =    Flux Scheme"<<endl
 				 <<_BC_ARK<<"    =    Boundary Condition"<<endl
-				 <<_QMODEL_ARK<<"    =    velocity model"<<endl
+				 << DmQnName<<"    =    velocity model"<<endl
 				 <<_FORCE_MODEL_ARK<<"    =    Force model"<<endl
 				 <<_EOS_MODEL_ARK<<"    =    EoS model"<<endl
 				 <<left<<fs<<"="<<fs<<"left"<<endl
@@ -103,8 +107,10 @@ void OutputCase()
 				 <<dt<<"    =    dt"<<endl				 
 				 <<dt/Tau0<<"    =    dt/tau0"<<endl
 				 <<RESIDUAL<<"    =    RESIDUAL"<<endl
+				 <<End_Step<<"    =    End_Step"<<endl
 				 <<MaSpan<<"    =    MaSpan"<<endl
 				 <<Eta<<"    =    Eta// T of D2V16"<<endl
+				 #ifdef _ARK_ALLENCAHN_FLIP
 				 <<"-------------Phase Field--------------"<<endl
 				 <<PhaseFieldAC::Cn<<"    =    Cahn number"<<endl
 				 <<PhaseFieldAC::Pe<<"    =    Peclet number"<<endl
@@ -114,54 +120,25 @@ void OutputCase()
 				 <<endl
 				 <<PhaseFieldAC::M_Phi<<"    =    mobility"<<endl
 				 <<PhaseFieldAC::TauMass<<"    =    mobility relaxition time"<<endl
-				 <<PhaseFieldAC::W_InterFace<<"    =    inteface width"<<endl
+				 <<dt/PhaseFieldAC::TauMass<<"    =    dt/tauMass"<<endl
+				 <<PhaseFieldAC::wI<<"    =    inteface width"<<endl
 				 <<PhaseFieldAC::Sigma<<"    =    Sigma(surface tension coefficient)"<<endl
 				 <<PhaseFieldAC::Beta<<"    =    Beta"<<endl
 				 <<PhaseFieldAC::Kappa<<"    =    Kappa"<<endl
 				 <<PhaseFieldAC::RhoL<<"    =    liquid density"<<endl
 				 <<PhaseFieldAC::RhoV<<"    =    vapor density"<<endl
-				 <<PhaseFieldAC::MuL<<"    =    liquid viscosity"<<endl
-				 <<PhaseFieldAC::MuV<<"    =    vapor viscosity"<<endl
-				 <<PhaseFieldAC::NuL<<"    =    liquid viscosity"<<endl
-				 <<PhaseFieldAC::NuV<<"    =    vapor viscosity"<<endl
+				 <<PhaseFieldAC::MuL<<"    =    liquid dynamic viscosity"<<endl
+				 <<PhaseFieldAC::MuV<<"    =    vapor dynamic viscosity"<<endl
+				 <<PhaseFieldAC::NuL<<"    =    liquid kinetic viscosity"<<endl
+				 <<PhaseFieldAC::NuV<<"    =    vapor kinetic viscosity"<<endl
 				 <<PhaseFieldAC::RhoL/PhaseFieldAC::RhoV<<"    =    "<<"density ratio"<<endl
-				 <<PhaseFieldAC::MuL/PhaseFieldAC::MuV<<"    =    "<<"dynamic viscosity ratio";
+				 <<PhaseFieldAC::MuL/PhaseFieldAC::MuV<<"    =    "<<"dynamic viscosity ratio"<<endl
+				 #endif
+				 <<"-------------End--------------"<<endl;
 
 	OutFile_Case.close();
 //
 }
-// void Output_Convergence()
-// {
-// 	ostringstream oss_L2;
-// 	oss_L2 <<"../FlowField/Convergence/L2_uvp_mu"<<Mu0<<"_Re"<<Re<<"_"<<NL<<_MESHFILE_NAME_ARK<<".dat"; 
-// 	ofstream OutFile_L2(oss_L2.str().c_str());
-// 	if(!OutFile_L2)
-// 	{
-// 		_PRINT_ERROR_MSG_FLIP
-// 		cout <<"OutFile_L2 file open failed"<<endl;
-// 		getchar();
-// 	}
-// //---------------------------------------------------------------------
-// 	ostringstream oss_SumRho;
-// 	oss_SumRho << "../FlowField/Convergence/SumRho_mu"<<Mu0<<"_Re"<<Re<<"_"<<NL<<_MESHFILE_NAME_ARK<<".dat";
-// 	ofstream OutFile_SumRho(oss_SumRho.str().c_str());
-// 	if(!OutFile_SumRho)
-// 	{
-// 		_PRINT_ERROR_MSG_FLIP
-// 		cout <<"OutFile_SumRho file open failed"<<endl;
-// 		getchar();
-// 	}
-// //---------------------------------------------------------------------
-// 	ostringstream oss_Residual;
-// 	oss_Residual <<"../FlowField/Convergence/Residual_mu"<<Mu0<<"_Re"<<Re<<"_"<<NL<<_MESHFILE_NAME_ARK<<".dat";
-// 	ofstream OutFile_Residual(oss_Residual.str().c_str());
-// 	if(!OutFile_Residual)
-// 	{
-// 		_PRINT_ERROR_MSG_FLIP
-// 		cout <<"OutFile_Residual open failed"<<endl;
-// 		getchar();
-// 	}
-// }
 void TaylorGreen_L2Norm(double const &t,double &L2_uv, double &L2_p)
 {
 	double u_A, v_A, p_A, du, dv, dp; 
@@ -224,11 +201,25 @@ void ForceDrivenTaylorGreen_L2Norm(double &L2_uv, double &L2_p)
 	L2_uv = sqrt(Sumdudv/Sumuv_A);
 	L2_p  = sqrt(Sumdp/Sump_A);
 }
+void AC_Drop_L2Norm(double &L2_Phi)
+{
+	double Phi_A = 0.0,dPhi = 0.0;
+	double SumdPhi = 0.0,SumPhi_A = 0.0;
+	LoopPS(Cells)
+	{
+		Phi_A = AnalyticalPhiAC_Drop(CellArray[n].xc,CellArray[n].yc);
+		dPhi = CellArray[n].MsQ().Phi - Phi_A;
+		SumdPhi += dPhi*dPhi;
+		SumPhi_A += Phi_A*Phi_A;
+	}
+	L2_Phi = sqrt(SumdPhi/SumPhi_A);
+}
 void Output_L2Norm(double const &t,double &L2_uv, double &L2_p)
 {	
 	//ForceDrivenTaylorGreen_L2Norm(L2_uv,L2_p);
 	//TaylorCouette_L2Norm(L2_uv);
-	LayeredPoiseuille_L2Norm(L2_uv);
+	//LayeredPoiseuille_L2Norm(L2_uv);
+	AC_Drop_L2Norm(L2_uv);
 	ostringstream oss_L2;
 	oss_L2 <<"../FlowField/Convergence/L2_uvp_mu"<<Mu0<<"_Re"<<Re<<"_"<<_MESHFILE_NAME_ARK<<".dat";
 	ofstream OutFile_L2(oss_L2.str().c_str(),ofstream::app);
@@ -274,10 +265,9 @@ void Output_Residual(double t,double Residual)
 }
 void Output_MidX(int step)
 {
-	using PhaseFieldAC::centerX;
 	using PhaseFieldAC::RhoL;
 	using PhaseFieldAC::RhoV;
-	int const mid = 5;//static_cast<int>(centerX);
+	int const midX = Nx/2;
 	//int const mid = 1;
 	ostringstream oss_MidX;
 	oss_MidX <<"../FlowField/Convergence/"<<"MidX_"<<"Ma"<< Ma<<"_"
@@ -294,27 +284,62 @@ void Output_MidX(int step)
 	for(int k = 1;k < Nyp1;++k)
 	{
 		double u_A;
-		Cell_2D &cell = *CarCellArray[mid][k];
+		Cell_2D &cell = *CarCellArray[midX][k];
 		LayeredPoiseuilleAnalytical(cell.yc,u_A);
-		OutFile_MidX<<cell.yc<<fs<<cell.MsQ().U<<fs<<u_A<<endl;
-		// OutFile_MidX<<cell.yc<<fs
-		// 			<<cell.MsQ().U<<fs
-		// 			<<cell.MsQ().V<<fs
-		// 			<<cell.MsQ().Rho<<fs
-		// 			<<endl;
-		// OutFile_MidX<<cell.Face_C[1]->f.BhDt[0][0]<<fs
-		// 			<<cell.Face_C[1]->f.BhDt[0][1]<<fs
-		// 			<<cell.Face_C[1]->f.BhDt[0][2]<<fs
-		// 			<<cell.Face_C[1]->f.BhDt[0][3]<<fs
-		// 			<<cell.Face_C[1]->f.BhDt[0][4]<<fs
-		// 			<<cell.Face_C[1]->f.BhDt[0][5]<<fs
-		// 			<<cell.Face_C[1]->f.BhDt[0][6]<<fs
-		// 			<<cell.Face_C[1]->f.BhDt[0][7]<<fs
-		// 			<<cell.Face_C[1]->f.BhDt[0][8]<<fs
-		// 			<<cell.Face_C[1]->MsQh().Rho<<fs
-		// 			<<endl;
+		OutFile_MidX<<cell.yc<<fs<<cell.MsQ().Rho<<fs<<cell.MsQ().U<<fs<<u_A<<endl;
 	}
-
+}
+void Output_MidX_reverse(int step)
+{
+	using PhaseFieldAC::RhoL;
+	using PhaseFieldAC::RhoV;
+	int const midX = Nx/2;
+	//int const mid = 1;
+	ostringstream oss_MidX;
+	oss_MidX <<"../FlowField/Convergence/"<<"MidXreverse_"<<"Ma"<< Ma<<"_"
+					<<_MESHTYPE_ARK<<NL<<"_CFL"<<CFL<<"ratio_"<<RhoL/RhoV<<"step"<<step<<".dat";
+	ofstream OutFile_MidX(oss_MidX.str().c_str());
+	if(!OutFile_MidX)
+	{
+		_PRINT_ERROR_MSG_FLIP
+		cout <<"  "<<"OutFile_MidX open failed" << endl; 
+		getchar();
+		exit(-1);
+	}
+	OutFile_MidX<<std::setiosflags(ios::scientific)<<std::setprecision(20);
+	for(int k = Ny;k > 0;--k)
+	{
+		double u_A;
+		Cell_2D &cell = *CarCellArray[midX][k];
+		LayeredPoiseuilleAnalytical(cell.yc,u_A);
+		OutFile_MidX<<cell.yc<<fs<<cell.MsQ().Rho<<fs<<cell.MsQ().U<<fs<<u_A<<endl;
+	}
+}
+void Output_MidY(int step)
+{
+	using PhaseFieldAC::RhoL;
+	using PhaseFieldAC::RhoV;
+	int const midY = Ny/2;
+	//int const mid = 1;
+	ostringstream oss_MidY;
+	oss_MidY <<"../FlowField/Convergence/"<<"MidY_"<<"Ma"<< Ma<<"_"
+					<<_MESHTYPE_ARK<<NL<<"_CFL"<<CFL<<"ratio_"<<RhoL/RhoV<<"step"<<step<<".dat";
+	ofstream OutFile_MidY(oss_MidY.str().c_str());
+	if(!OutFile_MidY)
+	{
+		_PRINT_ERROR_MSG_FLIP
+		cout <<"  "<<"OutFile_MidY open failed" << endl; 
+		getchar();
+		exit(-1);
+	}
+	OutFile_MidY<<std::setiosflags(ios::scientific)<<std::setprecision(20);
+	for(int k = 1;k < Nxp1;++k)
+	{
+		double u_A;
+		Cell_2D &cell = *CarCellArray[k][midY];
+		LayeredPoiseuilleAnalytical(cell.yc,u_A);
+		OutFile_MidY<<cell.xc<<fs<<cell.MsQ().Rho<<fs<<cell.MsQ().V<<fs<<u_A<<endl;
+	}
 }
 void Output_Flowfield(double const &t,int step)
 {

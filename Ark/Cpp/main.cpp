@@ -50,17 +50,25 @@ double SumRho = 0.0, SumT = 0.0;
 extern int MeshConstruct(const string& s);
 extern int MeshArea();
 extern void FacesClassify();
-extern int ShadowCellConstruct();
 extern void NeighbourCellConstruct();
+extern void  Grad_LSMatrix();
+//
+//--------------MeshCheck.cpp--------------------
+extern int MeshCheck();
+extern int MeshOutput(const string& s);
+//
+//---------------GhostCells.cpp------------------
+extern int ShadowCellConstruct();
 extern void ShadowCellCornerConstruct();
+//
+//!----------------MeshCartesian.cpp--------------
 extern void DiagonalCellConstruct();
 extern void CarfaceCellsConstruct();
+extern void CarfaceFacesConstruct();
 extern void AllocateCarCellArray();
 extern void DeallocateCarCellArray();
 extern void SetFace_dxdy();
-extern int MeshCheck();
-extern int MeshOutput(const string& s);
-extern void  Grad_LSMatrix();
+//
 //--------------Qmodel.cpp-------------------
 extern void DiscreteVelocityAssign();
 extern void setXiDotdS();
@@ -78,9 +86,13 @@ extern void LidDrivenSquare();
 extern void ForceDrivenTG();
 extern void unsteadyTaylorGreen();
 extern void SCMP_Drop();
+extern void SCMP_FlatInterface();
 extern void AC_Drop();
 extern void AC_RisingBubble();
 extern void AC_LayeredPoiseuille();
+extern void AC_ShearFlow();
+extern void AC_Smoothed();
+extern void AC_ZalesakDisk();
 //----------------Inc_2DSolver.cpp----------------
 extern void DUGKS2DSolver();
 //--------------Output.cpp------------------------
@@ -133,11 +145,11 @@ int main()
 	DUGKS2DSolver();
 	#endif
 //------------------Afterprocess----------------
-	DeallocateResource();
 	#ifdef _ZERO_NDEBUG_FLIP
 	MeshOutput(MeshName);
 	getchar();
 	#endif
+	DeallocateResource();
 }
 //
 // void AllocateInCells(const int& CellNum,Cell_2D* &ptrCell)
@@ -155,9 +167,11 @@ void AllocateResource()
 	// 	FaceArray[n].AllocateInFace();
 	// cout <<"Allocating Resources for Faces Done"<<endl;
 //
+	printSplitLine();
 	cout <<"Calculating xi*n*dS..."<<endl;
 	setXiDotdS();
 	cout <<"Calculating xi*n*dS Done"<<endl;
+	printSplitLine(nl);
 //
 	// cout <<"Allocating Resources for Cells..."<<endl;
 	// AllocateInCells(Cells,CellArray);
@@ -172,11 +186,14 @@ void AllocateResource()
 	// {
 	// 	PeriodicShadowCA[n] = *PeriodicShadowCA[n].ShadowC;
 	// }
+	printSplitLine();
+	cout <<"Resources Allocating..."<<endl;
 	#ifdef _CARTESIAN_MESH_FLIP
 	//AllocateShadowCorners();
 	AllocateCarCellArray();
 	#endif
-	cout <<"Allocating Resources for Cells Done"<<endl;
+	cout <<"Resources Allocated"<<endl;
+	printSplitLine(nl);
 }
 void AllocateShadowCorners()
 {
@@ -196,19 +213,21 @@ void DeallocateFaces(int BoundFaceNum, Face_2D** &ptrBoundFaceA)
 {
 	if (0 == BoundFaceNum) return;
 	delete[] ptrBoundFaceA;
+	ptrBoundFaceA = nullptr;
 }
 void DeallocateCells(int BoundFaceNum, Cell_2D* &ptrBoundShadowCA)
 {
 	if (0 == BoundFaceNum) return;
 	delete[] ptrBoundShadowCA;
+	ptrBoundShadowCA = nullptr;
 }
 void DeallocateResource()
 {
 	delete[] xi_u;
 	delete[] xi_v;
-	delete[] NodeArray;
-	delete[] FaceArray;
-	delete[] CellArray;
+	delete[] NodeArray; NodeArray = nullptr;
+	delete[] FaceArray; FaceArray = nullptr;
+	delete[] CellArray; CellArray = nullptr;
 	DeallocateFaces(InteriorFaceNum,InteriorFaceA);
 	DeallocateFaces(PeriodicFaceNum,PeriodicFaceA);
 	DeallocateFaces(WallFaceNum,WallFaceA);
@@ -226,7 +245,10 @@ void DeallocateResource()
 	DeallocateCells(V_InletFaceNum,V_InletShadowCA);
 	DeallocateCells(PeriodicFaceNum,PeriodicShadowCA);
 	#ifdef _CARTESIAN_MESH_FLIP
-//	DeallocateShadowCorners();
 	DeallocateCarCellArray();
 	#endif
+	printSplitLine();
+	cout <<"Resources Deallocated."<<endl;
+	cout <<"Programme END."<<endl;	 
+	printSplitLine(nl);
 }

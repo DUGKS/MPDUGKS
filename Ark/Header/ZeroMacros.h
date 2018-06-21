@@ -28,20 +28,4 @@ infinitesimal = 1.0E-14,
 
 PI = 3.141592653589793;
 
-namespace ARK{
-
-int const 
-
-ND = 2,
-
-cellN = 4,
-
-cellF = 4,
-
-faceN = 2,
-
-faceF = 0;
-
-}
-
 #endif

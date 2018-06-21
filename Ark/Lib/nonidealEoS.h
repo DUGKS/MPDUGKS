@@ -1,7 +1,10 @@
+double const 
+
+T_r = PseudoPotentialSC::Tr;
 
 double const 
 
-Tcr = 1.0*0.8;
+Tcr = 1.0*T_r;
 //-----------------------------reduced Carnahan-Starling EoS--------------------------
 double const 
 
@@ -46,7 +49,7 @@ aVdW = 9.0/49,
 
 bVdW = 2.0/21,
 
-T_VdW = 0.8*TcrVdW;
+T_VdW = T_r*TcrVdW;
 
 double VanderWaals(double rho)
 {
@@ -61,7 +64,7 @@ bCS = 4.0,
 
 Tc_CS = 0.0943,
 
-T_CS = 0.9*Tc_CS;
+T_CS = T_r*Tc_CS;
 
 double CarnahanStarling(double rho) //rho*(1+rho*(1-rho))
 {

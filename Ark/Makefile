@@ -1,12 +1,12 @@
 vpath %.h Header:Lib
 vpath %.cpp Cpp:Lib
 
-Target = PFDUGKS
+Target = ACDUGKS
 QModel = D2Q9AC
 
 CC = icpc
 
-CFLAGS = -std=c++11 -Wall -Wextra -Wconversion -I./Header -I./Lib -I./Constant -O3
+CFLAGS = -std=c++11 -Wall -Wextra -I./Header -I./Lib -I./Constant -O3
 
 MPFLAG = -fopenmp
 
@@ -14,7 +14,7 @@ DIR_SRC = ./Cpp
 
 DIR_OBJ = ./Obj
 
-DIR_OUT = ../FlowField ../FlowField/global ../FlowField/Convergence
+DIR_OUT = ../FlowField/global ../FlowField/Convergence
 
 SRC = $(wildcard ${DIR_SRC}/*.cpp)
 
@@ -36,7 +36,7 @@ ${DIR_OBJ}/${QModel}.o:./Lib/${QModel}.cpp
 clean:
 	find -name "${Target}" -exec mv {} ~/.trash/ \;
 	find ${DIR_OBJ} -name "*.o" -exec mv {} ~/.trash/ \;
-	find ${DIR_OUT} -name "*.dat" -exec mv {} ~/.trash/ \;
+	find ${DIR_OUT} -name "*.dat" -exec rm {} \; 
 
 # headers = ZeroDeclaration.h Mesh_2D.h ZeroConstant.h $(QModel).h ZeroReference.h ZeroFlip.h
 

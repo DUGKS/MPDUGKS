@@ -6,6 +6,8 @@ double const degrees = 3.0 + nK;//total molecule degrees of freedom;
 
 double const degPlus2 = degrees + 2.0;
 
+extern const char DmQnName[] = "D2Q16"; 
+
 namespace D2V16{
 double const c = MaSpan,e = Eta;
 double const c2 = c*c,e2 = e*e,c2e2 = c2*e2;

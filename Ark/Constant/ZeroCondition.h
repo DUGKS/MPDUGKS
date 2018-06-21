@@ -1,3 +1,8 @@
+/*!
+*------------------------------------------------
+*|||||||||||used for initialization;*|||||||||||*
+*------------------------------------------------
+*/
 //UniformFlow();
 //LidDrivenSquare();
 //ShockStructure();
@@ -8,6 +13,10 @@
 //TaylorCouetteInitialization();
 //ForceDrivenTG();
 //SCMP_Drop();
+//SCMP_FlatInterface();
 //AC_Drop();
+// AC_Smoothed();
+AC_ZalesakDisk();
+//AC_ShearFlow();
 //AC_RisingBubble();
-AC_LayeredPoiseuille();
+//AC_LayeredPoiseuille();

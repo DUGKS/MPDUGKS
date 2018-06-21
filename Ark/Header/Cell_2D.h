@@ -58,8 +58,10 @@ public:
 	#ifdef _ARK_ALLENCAHN_FLIP
 	DVDF h;
 	#endif
-//
+	//!momentum
+	#ifdef _ARK_MOMENTUM_FLIP
 	DVDF f;
+	#endif
 //
 	#ifndef _ARK_ISOTHERMAL_FLIP
 	DVDF g;

@@ -1,6 +1,8 @@
 #include "DUGKSDeclaration.h"
 #include "GaussHermite.h"
 
+extern const char DmQnName[] = "D2Q9PP"; 
+
 extern double * const xi_u = new double[DV_Qv];
 
 extern double * const xi_v = new double[DV_Qv];
@@ -10,9 +12,12 @@ const double omega[DV_Qv]={4.0/9.0,
 						1.0/9.0, 1.0/36.0,
 						1.0/9.0, 1.0/36.0,
 						1.0/9.0, 1.0/36.0};
-const char DmQnName[] = "D2Q9"; 
 
 double const KForce = 1;
+
+extern void Update_PseudoPsi(Cell_2D &cell);
+
+extern void Update_PseudoPsi(Face_2D &face);
 
 void MacroQuantity::calcMu()
 {
@@ -90,6 +95,10 @@ void Update_MacroVar(Cell_2D& cell)
 	cell.MsQ().U += hDt*cell.MsQ().Fx/cell.MsQ().Rho;
 	cell.MsQ().V += hDt*cell.MsQ().Fy/cell.MsQ().Rho;
 	#endif
+
+	#ifdef _ARK_PSEUDOPSI_FLIP
+	Update_PseudoPsi(cell);
+	#endif
 	// cell.MsQ().U    = (IntegralGH(DV_Qv,cell.f.Tilde[0],xi_u))/Rho0;
 	// cell.MsQ().V    = (IntegralGH(DV_Qv,cell.f.Tilde[0],xi_v))/Rho0;	
 	// #ifdef _ARK_FORCE_FLIP
@@ -105,10 +114,14 @@ void Update_MacroVar_h(Face_2D& face)
 	face.MsQh().V    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_v)/face.MsQh().Rho;
 	//
 	#ifdef _ARK_FORCE_FLIP
-	face.MsQh().Fx = 0.5*((face.owner->msq->Fx) + (face.neigh->msq->Fx));
-	face.MsQh().Fy = 0.5*((face.owner->msq->Fy) + (face.neigh->msq->Fy));
+	// face.MsQh().Fx = 0.5*((face.owner->msq->Fx) + (face.neigh->msq->Fx));
+	// face.MsQh().Fy = 0.5*((face.owner->msq->Fy) + (face.neigh->msq->Fy));
 	face.MsQh().U += 0.5*hDt*face.MsQh().Fx/face.MsQh().Rho;
 	face.MsQh().V += 0.5*hDt*face.MsQh().Fy/face.MsQh().Rho;
+	#endif
+
+	#if defined _ARK_PSEUDOPSI_FLIP && defined _ARK_FORCE_FLIP
+	Update_PseudoPsi(face);
 	#endif
 	// face.MsQh().U    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_u)/Rho0;
 	// face.MsQh().V    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_v)/Rho0;

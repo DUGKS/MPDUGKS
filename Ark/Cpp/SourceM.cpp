@@ -4,7 +4,7 @@ using PhaseFieldAC::PhiL;
 using PhaseFieldAC::PhiV;
 using PhaseFieldAC::RhoL;
 using PhaseFieldAC::RhoV;
-using PhaseFieldAC::W_InterFace;
+using PhaseFieldAC::wI;
 using PhaseFieldAC::Gx;
 using PhaseFieldAC::Gy;
 
@@ -14,7 +14,7 @@ extern void Grad_Phi_CD(Cell_2D *center);
 
 inline double SourcePhi(double phi)
 {
-	return -4*(phi-PhiL)*(phi-PhiV)/(W_InterFace*(PhiL-PhiV));
+	return -4*(phi-PhiL)*(phi-PhiV)/(wI*(PhiL-PhiV));
 }
 inline double ChemicalPotential(double Phi,double laplacianPhi)
 {
@@ -38,8 +38,10 @@ void MacroSource(Cell_2D *cellptr)
 	Grad_Phi_6points(cellptr);
 //	Grad_Phi_CD(cellptr);
 //
+	#ifdef _ARK_MOMENTUM_FLIP
 	#ifdef _ARK_FORCE_FLIP
 	SourceMomentum(cellptr);
+	#endif
 	#endif
 //
 	double L = sqrt(cellptr->MsQ().SqPhixPhiy());

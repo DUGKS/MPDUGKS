@@ -8,174 +8,6 @@ using std::setprecision;
 using std::cout;
 using std::endl;
 
-void LSCellMatrix(Cell_2D* const &Center,int k,
-					const double &neighbour_xc, double const &neighbour_yc)
-{
-	double dx = neighbour_xc - Center->xc, dy = neighbour_yc - Center->yc;
-//
-	SetZero(dx);
-	SetZero(dy);
-//-----------------LeastSquare Left Matrix----------------------
-	double DistanceP2P = dx*dx + dy*dy;
-	Center->LS_M[0][0] += dx*dx/DistanceP2P;
-	Center->LS_M[0][1] += dx*dy/DistanceP2P;
-	Center->LS_M[1][0] += dy*dx/DistanceP2P;
-	Center->LS_M[1][1] += dy*dy/DistanceP2P;
-//-----------------LeastSquare Right Matrix---------------------
-	Center->wdx_C[k] = dx/DistanceP2P;
-	Center->wdy_C[k] = dy/DistanceP2P;
-}
-
-void InverseMatrix_2_2(double (&LS_M)[2][2])
-{
-	double a[2][2],A;
-	A = LS_M[0][0] * LS_M[1][1] - LS_M[0][1] * LS_M[1][0];
-	if(0.0 == A)
-	{
-		cout <<"Singular Maxtrix : " <<__FILE__<<"  "<<__LINE__<<"  "<<__func__<<endl;
-		getchar();
-		return;
-	}
-	a[0][0] = LS_M[1][1]/A;
-	a[1][1] = LS_M[0][0]/A;
-	a[0][1] = -LS_M[0][1]/A;
-	a[1][0] = -LS_M[1][0]/A;
-	for(int i = 0;i < 2;++i)
-		for(int j = 0;j < 2;++j)
-			LS_M[i][j] = a[i][j];
-}
-void Grad_LSMatrix()
-{
-	Cell_2D* neighbour = nullptr;
-	Cell_2D* center = nullptr;
-	for(int i = 0;i != Cells;++i)
-	{
-		center = &CellArray[i];
-		for(int k = 0;k != center->celltype;++k)
-		{
-			neighbour = center->Cell_C[k];
-			if(neighbour != nullptr)
-			{
-				LSCellMatrix(center,k,neighbour->xc,neighbour->yc);
-			}
-			else
-			{
-				cout << "CellArray : " << i <<"neighbour cell invalid : "<<endl;
-				getchar();
-			}
-		}
-		InverseMatrix_2_2(center->LS_M);
-	}
-	cout <<"LeastSquare Matrix Construction Done" << endl;
-}
-void LeastSquareDebug()
-{
-	for(int i = 0;i < Cells;++i)
-	{
-		Cell_2D *center = &CellArray[i], *neighbour = nullptr;
-		for(int m = 0;m < DV_Qu;++m)
-		for(int n = 0;n < DV_Qv;++n)
-		{
-			center->f.BarP[m][n] = -1.0;
-			for(int Iface = 0;Iface < center->celltype;++Iface)
-			{
-			neighbour = center->Cell_C[Iface];
-				if(neighbour->xc == center->xc && neighbour->yc > center->yc)
-				{
-					neighbour->f.BarP[m][n] = 1.5;
-				}
-				else if(neighbour->xc == center->xc && neighbour->yc < center->yc)
-				{
-					neighbour->f.BarP[m][n] = 0.0;
-				}
-				else if(neighbour->yc == center->yc && neighbour->xc > center->xc)
-				{
-					neighbour->f.BarP[m][n] = 5;
-				}
-				else if(neighbour->yc == center->yc && neighbour->xc < center->xc)
-				{
-					neighbour->f.BarP[m][n] = 2;
-				}
-				else
-				{
-					cout << "neither xc nor yc is the same;"<<endl;
-					_PRINT_ERROR_MSG_FLIP
-					getchar();
-				}
-			}
-			double Sum_wdxdfBP = 0.0;
-			double Sum_wdydfBP = 0.0;
-			for(int Iface = 0;Iface < center->celltype;++Iface)
-			{
-				neighbour = center->Cell_C[Iface];
-				Sum_wdxdfBP += center->wdx_C[Iface]*(neighbour->f.BarP[m][n] - center->f.BarP[m][n]);
-				Sum_wdydfBP += center->wdy_C[Iface]*(neighbour->f.BarP[m][n] - center->f.BarP[m][n]);
-			}
-			center->f.BarP_x[m][n] = center->LS_M[0][0]*Sum_wdxdfBP + center->LS_M[0][1]*Sum_wdydfBP;
-			center->f.BarP_y[m][n] = center->LS_M[1][0]*Sum_wdxdfBP + center->LS_M[1][1]*Sum_wdydfBP;
-			if(CellArray[i].f.BarP_x[m][n] != 3.0*0.5*NL || CellArray[i].f.BarP_y[m][n] != 1.5*0.5*NL)
-			{
-				cout <<"CellArray : "<<i<<" ---------"<<endl;
-				cout <<"m = "<<m <<"  "<<CellArray[i].f.BarP_x[m][n]
-					<<"    "<<CellArray[i].f.BarP_y[m][n]<<endl;
-				getchar();
-			}
-		}
-	}
-}
-
-
-void Grad_VS_LS(Cell_2D *center)
-{
-	Cell_2D  *neighbour = nullptr;
-	for(int m = 0;m < DV_Qu;++m)
-	for(int n = 0;n < DV_Qv;++n)
-	{
-		#ifdef _ARK_ALLENCAHN_FLIP
-		double Sum_wdxdhBP = 0.0;
-		double Sum_wdydhBP = 0.0;
-		#endif
-
-		double Sum_wdxdfBP = 0.0;
-		double Sum_wdydfBP = 0.0;
-
-		#ifndef _ARK_ISOTHERMAL_FLIP
-		double Sum_wdxdgBP = 0.0;
-		double Sum_wdydgBP = 0.0;
-		#endif
-
-		for(int Iface = 0;Iface < center->celltype;++Iface)
-		{
-			neighbour = center->Cell_C[Iface];
-
-			#ifdef _ARK_ALLENCAHN_FLIP
-			Sum_wdxdhBP += center->wdx_C[Iface]*(neighbour->h.BarP[m][n] - center->h.BarP[m][n]); 
-			Sum_wdydhBP += center->wdy_C[Iface]*(neighbour->h.BarP[m][n] - center->h.BarP[m][n]);
-			#endif
-//
-			Sum_wdxdfBP += center->wdx_C[Iface]*(neighbour->f.BarP[m][n] - center->f.BarP[m][n]);
-			Sum_wdydfBP += center->wdy_C[Iface]*(neighbour->f.BarP[m][n] - center->f.BarP[m][n]);
-//isothermal flip
-			#ifndef _ARK_ISOTHERMAL_FLIP
-			Sum_wdxdgBP += center->wdx_C[Iface]*(neighbour->g.BarP[m][n] - center->g.BarP[m][n]);
-			Sum_wdydgBP += center->wdy_C[Iface]*(neighbour->g.BarP[m][n] - center->g.BarP[m][n]);
-			#endif
-		}
-		#ifdef _ARK_ALLENCAHN_FLIP
-		center->h.BarP_x[m][n] = center->LS_M[0][0]*Sum_wdxdhBP + center->LS_M[0][1]*Sum_wdydhBP;
-		center->h.BarP_y[m][n] = center->LS_M[1][0]*Sum_wdxdhBP + center->LS_M[1][1]*Sum_wdydhBP;
-		#endif
-		//
-		center->f.BarP_x[m][n] = center->LS_M[0][0]*Sum_wdxdfBP + center->LS_M[0][1]*Sum_wdydfBP;
-		center->f.BarP_y[m][n] = center->LS_M[1][0]*Sum_wdxdfBP + center->LS_M[1][1]*Sum_wdydfBP;
-//isothermal flip	
-		#ifndef _ARK_ISOTHERMAL_FLIP
-		center->g.BarP_x[m][n] = center->LS_M[0][0]*Sum_wdxdgBP + center->LS_M[0][1]*Sum_wdydgBP;
-		center->g.BarP_y[m][n] = center->LS_M[1][0]*Sum_wdxdgBP + center->LS_M[1][1]*Sum_wdydgBP;
-		#endif
-	}
-}
-
 double const
 
 DeltaX = dx,
@@ -184,18 +16,247 @@ DeltaY = dy,
 
 dxSq = DeltaX*DeltaX,
 
-dySq = DeltaY*DeltaY,
+dySq = DeltaY*DeltaY;
 
-_2dx = 2.0*DeltaX,
+#include "GradSchemeBasic.h"
 
-_2dy = 2.0*DeltaY;
+//------------------------------------Cartesian 6points---------------------------
+// void Grad_VS_6points(Cell_2D *cellptr)
+// {
+// 	for(int m = 0;m < DV_Qu;++m)
+// 	for(int n = 0;n < DV_Qv;++n)
+// 	{
+// 		#ifdef _ARK_ALLENCAHN_FLIP
+// 		cellptr->h.BarP_x[m][n] = 
+// 		(	apsi*
+// 	  	  	(
+// 	  	    (cellptr->Cell_C[0]->h.BarP[m][n]) - (cellptr->Cell_C[2]->h.BarP[m][n])
+// 	  	  	)
+// 	  	  + bpsi*
+// 	  	  	(
+// 	  			(cellptr->Cell_Diag[0]->h.BarP[m][n]) - (cellptr->Cell_Diag[1]->h.BarP[m][n])
+// 	  		+   (cellptr->Cell_Diag[3]->h.BarP[m][n]) - (cellptr->Cell_Diag[2]->h.BarP[m][n])
+// 	  	  	)
+// 		)/(_2dx*6);
+// 		cellptr->h.BarP_y[m][n] =
+// 		(	apsi*
+// 		    (
+// 		      (cellptr->Cell_C[1]->h.BarP[m][n]) - (cellptr->Cell_C[3]->h.BarP[m][n])
+// 		    )
+// 		  + bpsi*
+// 		    (
+// 		  		(cellptr->Cell_Diag[0]->h.BarP[m][n]) - (cellptr->Cell_Diag[3]->h.BarP[m][n])
+// 		  	+   (cellptr->Cell_Diag[1]->h.BarP[m][n]) - (cellptr->Cell_Diag[2]->h.BarP[m][n])
+// 		  	)
+// 		)/(_2dy*6);
+// 		#endif
+// 		//
+// 		cellptr->f.BarP_x[m][n] = 
+// 		(	apsi*
+// 	  	  	(
+// 	  	    (cellptr->Cell_C[0]->f.BarP[m][n]) - (cellptr->Cell_C[2]->f.BarP[m][n])
+// 	  	  	)
+// 	  	  + bpsi*
+// 	  	  	(
+// 	  			(cellptr->Cell_Diag[0]->f.BarP[m][n]) - (cellptr->Cell_Diag[1]->f.BarP[m][n])
+// 	  		+   (cellptr->Cell_Diag[3]->f.BarP[m][n]) - (cellptr->Cell_Diag[2]->f.BarP[m][n])
+// 	  	  	)
+// 		)/(_2dx*6);
+// 		cellptr->f.BarP_y[m][n] =
+// 		(	apsi*
+// 		    (
+// 		      (cellptr->Cell_C[1]->f.BarP[m][n]) - (cellptr->Cell_C[3]->f.BarP[m][n])
+// 		    )
+// 		  + bpsi*
+// 		    (
+// 		  		(cellptr->Cell_Diag[0]->f.BarP[m][n]) - (cellptr->Cell_Diag[3]->f.BarP[m][n])
+// 		  	+   (cellptr->Cell_Diag[1]->f.BarP[m][n]) - (cellptr->Cell_Diag[2]->f.BarP[m][n])
+// 		  	)
+// 		)/(_2dy*6);
+// //isothermal flip	
+// 		#ifndef _ARK_ISOTHERMAL_FLIP
+// 		cellptr->g.BarP_x[m][n] = 
+// 		(	apsi*
+// 	  	  	(
+// 	  	    (cellptr->Cell_C[0]->g.BarP[m][n]) - (cellptr->Cell_C[2]->g.BarP[m][n])
+// 	  	  	)
+// 	  	  + bpsi*
+// 	  	  	(
+// 	  			(cellptr->Cell_Diag[0]->g.BarP[m][n]) - (cellptr->Cell_Diag[1]->g.BarP[m][n])
+// 	  		+   (cellptr->Cell_Diag[3]->g.BarP[m][n]) - (cellptr->Cell_Diag[2]->g.BarP[m][n])
+// 	  	  	)
+// 		)/(_2dx*6);
+// 		cellptr->g.BarP_y[m][n] =
+// 		(	apsi*
+// 		    (
+// 		      (cellptr->Cell_C[1]->g.BarP[m][n]) - (cellptr->Cell_C[3]->g.BarP[m][n])
+// 		    )
+// 		  + bpsi*
+// 		    (
+// 		  		(cellptr->Cell_Diag[0]->g.BarP[m][n]) - (cellptr->Cell_Diag[3]->g.BarP[m][n])
+// 		  	+   (cellptr->Cell_Diag[1]->g.BarP[m][n]) - (cellptr->Cell_Diag[2]->g.BarP[m][n])
+// 		  	)
+// 		)/(_2dy*6);
+// 		#endif
+// 	}
+// }
+// void Grad_VS_4points(Cell_2D *cellptr)
+// {
+// 	for(int m = 0;m < DV_Qu;++m)
+// 	for(int n = 0;n < DV_Qv;++n)
+// 	{
+// 		#ifdef _ARK_ALLENCAHN_FLIP
+// 		cellptr->h.BarP_x[m][n] = 
+// 	  	  	(
+// 	  	    (cellptr->Cell_C[0]->h.BarP[m][n]) - (cellptr->Cell_C[2]->h.BarP[m][n])
+// 	  	  	)/(_2dx);
+// 		cellptr->h.BarP_y[m][n] =
+// 		    (
+// 		      (cellptr->Cell_C[1]->h.BarP[m][n]) - (cellptr->Cell_C[3]->h.BarP[m][n])
+// 		    )/(_2dy);
+// 		#endif
+// 		//
+// 		cellptr->f.BarP_x[m][n] = 
+// 	  	  	(
+// 	  	    (cellptr->Cell_C[0]->f.BarP[m][n]) - (cellptr->Cell_C[2]->f.BarP[m][n])
+// 	  	  	)/(_2dx);
+// 		cellptr->f.BarP_y[m][n] =
+// 		    (
+// 		      (cellptr->Cell_C[1]->f.BarP[m][n]) - (cellptr->Cell_C[3]->f.BarP[m][n])
+// 		    )/(_2dy);
+// //isothermal flip	
+// 		#ifndef _ARK_ISOTHERMAL_FLIP
+// 		cellptr->g.BarP_x[m][n] = 
+// 	  	  	(
+// 	  	    (cellptr->Cell_C[0]->g.BarP[m][n]) - (cellptr->Cell_C[2]->g.BarP[m][n])
+// 	  	  	)/(_2dx);
+// 		cellptr->g.BarP_y[m][n] =
+// 		    (
+// 		      (cellptr->Cell_C[1]->g.BarP[m][n]) - (cellptr->Cell_C[3]->g.BarP[m][n])
+// 		    )/(_2dy);
+// 		#endif
+// 	}
+// }
+// void Grad_VS_LS(Cell_2D *center)
+// {
+// 	Cell_2D  *neighbour = nullptr;
+// 	for(int m = 0;m < DV_Qu;++m)
+// 	for(int n = 0;n < DV_Qv;++n)
+// 	{
+// 		#ifdef _ARK_ALLENCAHN_FLIP
+// 		double Sum_wdxdhBP = 0.0;
+// 		double Sum_wdydhBP = 0.0;
+// 		#endif
 
-int const
+// 		double Sum_wdxdfBP = 0.0;
+// 		double Sum_wdydfBP = 0.0;
 
-apsi = 4, 
+// 		#ifndef _ARK_ISOTHERMAL_FLIP
+// 		double Sum_wdxdgBP = 0.0;
+// 		double Sum_wdydgBP = 0.0;
+// 		#endif
 
-bpsi = 1;
+// 		for(int Iface = 0;Iface < center->celltype;++Iface)
+// 		{
+// 			neighbour = center->Cell_C[Iface];
 
+// 			#ifdef _ARK_ALLENCAHN_FLIP
+// 			Sum_wdxdhBP += center->wdx_C[Iface]*(neighbour->h.BarP[m][n] - center->h.BarP[m][n]); 
+// 			Sum_wdydhBP += center->wdy_C[Iface]*(neighbour->h.BarP[m][n] - center->h.BarP[m][n]);
+// 			#endif
+// //
+// 			Sum_wdxdfBP += center->wdx_C[Iface]*(neighbour->f.BarP[m][n] - center->f.BarP[m][n]);
+// 			Sum_wdydfBP += center->wdy_C[Iface]*(neighbour->f.BarP[m][n] - center->f.BarP[m][n]);
+// //isothermal flip
+// 			#ifndef _ARK_ISOTHERMAL_FLIP
+// 			Sum_wdxdgBP += center->wdx_C[Iface]*(neighbour->g.BarP[m][n] - center->g.BarP[m][n]);
+// 			Sum_wdydgBP += center->wdy_C[Iface]*(neighbour->g.BarP[m][n] - center->g.BarP[m][n]);
+// 			#endif
+// 		}
+// 		#ifdef _ARK_ALLENCAHN_FLIP
+// 		center->h.BarP_x[m][n] = center->LS_M[0][0]*Sum_wdxdhBP + center->LS_M[0][1]*Sum_wdydhBP;
+// 		center->h.BarP_y[m][n] = center->LS_M[1][0]*Sum_wdxdhBP + center->LS_M[1][1]*Sum_wdydhBP;
+// 		#endif
+// 		//
+// 		center->f.BarP_x[m][n] = center->LS_M[0][0]*Sum_wdxdfBP + center->LS_M[0][1]*Sum_wdydfBP;
+// 		center->f.BarP_y[m][n] = center->LS_M[1][0]*Sum_wdxdfBP + center->LS_M[1][1]*Sum_wdydfBP;
+// //isothermal flip	
+// 		#ifndef _ARK_ISOTHERMAL_FLIP
+// 		center->g.BarP_x[m][n] = center->LS_M[0][0]*Sum_wdxdgBP + center->LS_M[0][1]*Sum_wdydgBP;
+// 		center->g.BarP_y[m][n] = center->LS_M[1][0]*Sum_wdxdgBP + center->LS_M[1][1]*Sum_wdydgBP;
+// 		#endif
+// 	}
+// }
+
+void Grad_VS_4points(Cell_2D *cellptr)
+{
+	#ifdef _ARK_ALLENCAHN_FLIP
+	update_DVDF_Grad4points(cellptr,&Cell_2D::h);
+	#endif
+	//!momentum
+	#ifdef _ARK_MOMENTUM_FLIP
+	update_DVDF_Grad4points(cellptr,&Cell_2D::f);
+	#endif
+	//
+	#ifndef _ARK_ISOTHERMAL_FLIP
+	update_DVDF_Grad4points(cellptr,&Cell_2D::g);
+	#endif
+}
+void Grad_VS_6points(Cell_2D *cellptr)
+{
+	#ifdef _ARK_ALLENCAHN_FLIP
+	update_DVDF_Grad6points(cellptr,&Cell_2D::h);
+	#endif
+	//!momentum
+	#ifdef _ARK_MOMENTUM_FLIP
+	update_DVDF_Grad6points(cellptr,&Cell_2D::f);
+	#endif
+	//
+	#ifndef _ARK_ISOTHERMAL_FLIP
+	update_DVDF_Grad6points(cellptr,&Cell_2D::g);
+	#endif
+}
+void Grad_VS_LS(Cell_2D *center)
+{
+	#ifdef _ARK_ALLENCAHN_FLIP
+	update_DVDF_Grad_LS(center,&Cell_2D::h);
+	#endif
+	//!momentum
+	#ifdef _ARK_MOMENTUM_FLIP
+	update_DVDF_Grad_LS(center,&Cell_2D::f);
+	#endif
+	//
+	#ifndef _ARK_ISOTHERMAL_FLIP
+	update_DVDF_Grad_LS(center,&Cell_2D::g);
+	#endif
+}
+//!----------------------used to calculate pseudopotetial forece-------------------
+void update_Psi_x(Cell_2D *cellptr)
+{
+	cellptr->msq->Fx = update_MQ_x(cellptr,&MacroQuantity::Psi);
+}
+void update_Psi_y(Cell_2D *cellptr)
+{
+	cellptr->msq->Fy = update_MQ_y(cellptr,&MacroQuantity::Psi);
+}
+void update_Psi_x(Face_2D *faceptr)
+{
+	faceptr->msqh->Fx = update_MQ_x(faceptr,&MacroQuantity::Psi);
+}
+void update_Psi_y(Face_2D *faceptr)
+{
+	faceptr->msqh->Fy = update_MQ_y(faceptr,&MacroQuantity::Psi);
+}
+//!
+void update_Phi_x(Cell_2D *cellptr)
+{  
+	cellptr->msq->Phi_x = update_MQ_x(cellptr,&MacroQuantity::Phi);
+}
+//
+void update_Phi_y(Cell_2D *cellptr)
+{
+	cellptr->msq->Phi_y = update_MQ_y(cellptr,&MacroQuantity::Phi);
+}
 namespace APSI
 {
 
@@ -247,156 +308,6 @@ _E = 1;
 }
 
 namespace myPSI = CPSI;
-
-
-
-void update_Phi_x(Cell_2D *cellptr)
-{  
-	cellptr->msq->Phi_x
-	=
-	(	apsi*
-	    (
-	      (cellptr->Cell_C[0]->msq->Phi) - (cellptr->Cell_C[2]->msq->Phi)
-	    )
-	  + bpsi*
-	    (
-	  		(cellptr->Cell_Diag[0]->msq->Phi) - (cellptr->Cell_Diag[1]->msq->Phi)
-	  	+   (cellptr->Cell_Diag[3]->msq->Phi) - (cellptr->Cell_Diag[2]->msq->Phi)
-	  	)
-	)/(_2dx*6);
-}
-//
-void update_Phi_y(Cell_2D *cellptr)
-{
-	cellptr->msq->Phi_y 
-	=
-	(	apsi*
-	    (
-	      (cellptr->Cell_C[1]->MsQ().Phi) - (cellptr->Cell_C[3]->MsQ().Phi)
-	    )
-	  + bpsi*
-	    (
-	  		(cellptr->Cell_Diag[0]->MsQ().Phi) - (cellptr->Cell_Diag[3]->MsQ().Phi)
-	  	+   (cellptr->Cell_Diag[1]->MsQ().Phi) - (cellptr->Cell_Diag[2]->MsQ().Phi)
-	  	)
-	)/(_2dy*6);
-}
-void Grad_VS_6points(Cell_2D *cellptr)
-{
-	for(int m = 0;m < DV_Qu;++m)
-	for(int n = 0;n < DV_Qv;++n)
-	{
-		#ifdef _ARK_ALLENCAHN_FLIP
-		cellptr->h.BarP_x[m][n] = 
-		(	apsi*
-	  	  	(
-	  	    (cellptr->Cell_C[0]->h.BarP[m][n]) - (cellptr->Cell_C[2]->h.BarP[m][n])
-	  	  	)
-	  	  + bpsi*
-	  	  	(
-	  			(cellptr->Cell_Diag[0]->h.BarP[m][n]) - (cellptr->Cell_Diag[1]->h.BarP[m][n])
-	  		+   (cellptr->Cell_Diag[3]->h.BarP[m][n]) - (cellptr->Cell_Diag[2]->h.BarP[m][n])
-	  	  	)
-		)/(_2dx*6);
-		cellptr->h.BarP_y[m][n] =
-		(	apsi*
-		    (
-		      (cellptr->Cell_C[1]->h.BarP[m][n]) - (cellptr->Cell_C[3]->h.BarP[m][n])
-		    )
-		  + bpsi*
-		    (
-		  		(cellptr->Cell_Diag[0]->h.BarP[m][n]) - (cellptr->Cell_Diag[3]->h.BarP[m][n])
-		  	+   (cellptr->Cell_Diag[1]->h.BarP[m][n]) - (cellptr->Cell_Diag[2]->h.BarP[m][n])
-		  	)
-		)/(_2dy*6);
-		#endif
-		//
-		cellptr->f.BarP_x[m][n] = 
-		(	apsi*
-	  	  	(
-	  	    (cellptr->Cell_C[0]->f.BarP[m][n]) - (cellptr->Cell_C[2]->f.BarP[m][n])
-	  	  	)
-	  	  + bpsi*
-	  	  	(
-	  			(cellptr->Cell_Diag[0]->f.BarP[m][n]) - (cellptr->Cell_Diag[1]->f.BarP[m][n])
-	  		+   (cellptr->Cell_Diag[3]->f.BarP[m][n]) - (cellptr->Cell_Diag[2]->f.BarP[m][n])
-	  	  	)
-		)/(_2dx*6);
-		cellptr->f.BarP_y[m][n] =
-		(	apsi*
-		    (
-		      (cellptr->Cell_C[1]->f.BarP[m][n]) - (cellptr->Cell_C[3]->f.BarP[m][n])
-		    )
-		  + bpsi*
-		    (
-		  		(cellptr->Cell_Diag[0]->f.BarP[m][n]) - (cellptr->Cell_Diag[3]->f.BarP[m][n])
-		  	+   (cellptr->Cell_Diag[1]->f.BarP[m][n]) - (cellptr->Cell_Diag[2]->f.BarP[m][n])
-		  	)
-		)/(_2dy*6);
-//isothermal flip	
-		#ifndef _ARK_ISOTHERMAL_FLIP
-		cellptr->g.BarP_x[m][n] = 
-		(	apsi*
-	  	  	(
-	  	    (cellptr->Cell_C[0]->g.BarP[m][n]) - (cellptr->Cell_C[2]->g.BarP[m][n])
-	  	  	)
-	  	  + bpsi*
-	  	  	(
-	  			(cellptr->Cell_Diag[0]->g.BarP[m][n]) - (cellptr->Cell_Diag[1]->g.BarP[m][n])
-	  		+   (cellptr->Cell_Diag[3]->g.BarP[m][n]) - (cellptr->Cell_Diag[2]->g.BarP[m][n])
-	  	  	)
-		)/(_2dx*6);
-		cellptr->g.BarP_y[m][n] =
-		(	apsi*
-		    (
-		      (cellptr->Cell_C[1]->g.BarP[m][n]) - (cellptr->Cell_C[3]->g.BarP[m][n])
-		    )
-		  + bpsi*
-		    (
-		  		(cellptr->Cell_Diag[0]->g.BarP[m][n]) - (cellptr->Cell_Diag[3]->g.BarP[m][n])
-		  	+   (cellptr->Cell_Diag[1]->g.BarP[m][n]) - (cellptr->Cell_Diag[2]->g.BarP[m][n])
-		  	)
-		)/(_2dy*6);
-		#endif
-	}
-}
-void Grad_VS_4points(Cell_2D *cellptr)
-{
-	for(int m = 0;m < DV_Qu;++m)
-	for(int n = 0;n < DV_Qv;++n)
-	{
-		#ifdef _ARK_ALLENCAHN_FLIP
-		cellptr->h.BarP_x[m][n] = 
-	  	  	(
-	  	    (cellptr->Cell_C[0]->h.BarP[m][n]) - (cellptr->Cell_C[2]->h.BarP[m][n])
-	  	  	)/(_2dx);
-		cellptr->h.BarP_y[m][n] =
-		    (
-		      (cellptr->Cell_C[1]->h.BarP[m][n]) - (cellptr->Cell_C[3]->h.BarP[m][n])
-		    )/(_2dy);
-		#endif
-		//
-		cellptr->f.BarP_x[m][n] = 
-	  	  	(
-	  	    (cellptr->Cell_C[0]->f.BarP[m][n]) - (cellptr->Cell_C[2]->f.BarP[m][n])
-	  	  	)/(_2dx);
-		cellptr->f.BarP_y[m][n] =
-		    (
-		      (cellptr->Cell_C[1]->f.BarP[m][n]) - (cellptr->Cell_C[3]->f.BarP[m][n])
-		    )/(_2dy);
-//isothermal flip	
-		#ifndef _ARK_ISOTHERMAL_FLIP
-		cellptr->g.BarP_x[m][n] = 
-	  	  	(
-	  	    (cellptr->Cell_C[0]->g.BarP[m][n]) - (cellptr->Cell_C[2]->g.BarP[m][n])
-	  	  	)/(_2dx);
-		cellptr->g.BarP_y[m][n] =
-		    (
-		      (cellptr->Cell_C[1]->g.BarP[m][n]) - (cellptr->Cell_C[3]->g.BarP[m][n])
-		    )/(_2dy);
-		#endif
-	}
-}
 double update_Phi_yy(Cell_2D *cellptr)
 {	
 	return

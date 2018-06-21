@@ -92,7 +92,7 @@ void Update_MacroVar_h(Face_2D& face)
 	face.Rho_h = IntegralGH(Int_fBh_du,DV_Qu,wGH);
 	face.U_h   = IntegralGH(Int_fBh_du,DV_Qu,xi_u,wGH)/face.Rho_h;
 	face.V_h   = IntegralGH(Int_fBh_dv,DV_Qv,xi_v,wGH)/face.Rho_h;
-#ifndef _ARK_ISOTHERMAL_FLIP
+	#ifndef _ARK_ISOTHERMAL_FLIP
 	double aQh = face.tauh/(2.0*face.tauh + ::hDt*Pr);;
 	for(int i = 0;i < DV_Qu;++i)		
 	{

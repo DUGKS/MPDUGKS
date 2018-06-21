@@ -24,23 +24,20 @@
 #define _MESHTYPE_ARK "Car"
 #endif
 
-#ifndef _FLUX_SCHEME_UW_ARK
-#define _FLUX_SCHEME_UW_ARK "UW"	
-#define _FLUX_SCHEME_ARK _FLUX_SCHEME_UW_ARK
-#endif
-
-// #ifndef _FLUX_SCHEME_CD_ARK
-// #define _FLUX_SCHEME_CD_ARK "CD"
-// #define _FLUX_SCHEME_ARK _FLUX_SCHEME_CD_ARK
+// #ifndef _FLUX_SCHEME_UW_ARK
+// #define _FLUX_SCHEME_UW_ARK "UW"	
+// #define _FLUX_SCHEME_ARK _FLUX_SCHEME_UW_ARK
 // #endif
 
-//BB = bounce back,NEE = non-equilibrium extrapolation,DS = diffusive scattering
-#ifndef _BC_ARK
-#define _BC_ARK "NEE"
+#ifndef _FLUX_SCHEME_CD_ARK
+#define _FLUX_SCHEME_CD_ARK "CD"
+#define _FLUX_SCHEME_ARK _FLUX_SCHEME_CD_ARK
 #endif
 
-#ifndef _QMODEL_ARK
-#define _QMODEL_ARK "D2Q9AC"
+//BB = bounce back,NEE = non-equilibrium extrapolation,DS = diffusive scattering
+
+#ifndef _BC_ARK
+#define _BC_ARK "Periodic"
 #endif
 
 #ifndef _FORCE_MODEL_ARK
@@ -52,7 +49,7 @@
 #endif
 
 #ifndef _MESHFILE_NAME_ARK
-#define _MESHFILE_NAME_ARK "100_10_Car_Blend_Poiseuille_LBM"
+#define _MESHFILE_NAME_ARK "256_256_Car_Periodic_Square_LBM"
 #endif
 //----------------Boundary Condition Macro------------------
 
@@ -68,31 +65,45 @@
 #define _PERIODIC_12_8_BCs_FLIP 12
 #endif
 
-#ifndef _Wall_3_BCs_FLIP
-#define _Wall_3_BCs_FLIP	3
-	// #ifndef _Wall_3_BCs_DS
-	// #define _Wall_3_BCs_DS
-	// #endif
-//
-	#ifndef _Wall_3_BCs_NEE
-	#define _Wall_3_BCs_NEE
-	#endif
-//
-	// #ifndef _Wall_3_BCs_BB
-	// #define _Wall_3_BCs_BB
-	// #endif
-#endif
-//-------------------------------Force model------------------------------
+// #ifndef _Wall_3_BCs_FLIP
+// #define _Wall_3_BCs_FLIP	3
+// 	// #ifndef _Wall_3_BCs_DS
+// 	// #define _Wall_3_BCs_DS
+// 	// #endif
+// //
+// 	// #ifndef _Wall_3_BCs_NEE
+// 	// #define _Wall_3_BCs_NEE
+// 	// #endif
+// //
+// 	#ifndef _Wall_3_BCs_BB
+// 	#define _Wall_3_BCs_BB
+// 	#endif
+// #endif
+//--------------------------------------multiphase model-------------------
+
+// #ifndef _ARK_PSEUDOPSI_FLIP
+// #define _ARK_PSEUDOPSI_FLIP
+// #endif
 
 #ifndef _ARK_ALLENCAHN_FLIP
 #define _ARK_ALLENCAHN_FLIP
 #endif
 //
+//-------------------------------Force model------------------------------
+
 #ifndef _ARK_FORCE_FLIP
 #define _ARK_FORCE_FLIP
 #endif
 
-//-------------------------------Isothermal-------------------------------
+// #ifndef _ARK_STRANGSPLIT_FLIP
+// #define _ARK_STRANGSPLIT_FLIP
+// #endif
+
+//-------------------------------Momentum Energy-------------------------------
+// #ifndef _ARK_MOMENTUM_FLIP
+// #define _ARK_MOMENTUM_FLIP
+// #endif
+
 #ifndef _ARK_ISOTHERMAL_FLIP
 #define _ARK_ISOTHERMAL_FLIP
 #endif
@@ -102,13 +113,17 @@
 // #endif
 //----------------------------------------------------------------------------
 
-#ifndef _OUTPUT_L2NORM_ERROR_FLIP
-#define _OUTPUT_L2NORM_ERROR_FLIP
+#ifndef _ARK_ENDTIME_FLIP
+#define _ARK_ENDTIME_FLIP
 #endif
 
- // #ifndef _ARK_NOHUP_FLIP	//Flip on for server
- // #define _ARK_NOHUP_FLIP
- // #endif
+// #ifndef _OUTPUT_L2NORM_ERROR_FLIP
+// #define _OUTPUT_L2NORM_ERROR_FLIP
+// #endif
+
+ #ifndef _ARK_NOHUP_FLIP	//Flip on for server
+ #define _ARK_NOHUP_FLIP
+ #endif
 
 
 //

@@ -4,28 +4,28 @@
 #include <cmath>
 #include "ZeroFlip.h"
 
-//----------------------Mesh Information---------------
+//----------------------Mesh file---------------
 const int 
 
-Nx = 10,
+Nx = 256,
 
-Ny = 100,
+Ny = 256,
 
-NL = 100;//name of mesh file
+NL = 256;//name of mesh file
 
 const double
 
-ChLength = 100.0,
+ChLength = 256.0,
 
 MinL = ChLength/NL,//ChLength/NL,//6.037849742228585e-02,//3.079505855617000e-02,//1.555181192035053e-02,
 //7.776141069016656e-03,//
-X_Beg = 0, 
+X_Beg = 0.0,
 
-X_End = 10.0, 
+X_End = 256,
 
-Y_Beg = -50.0, 
+Y_Beg = 0.0,
 
-Y_End = 50.0,
+Y_End = 256.0,
 
 Lx = X_End - X_Beg,
 
@@ -67,9 +67,9 @@ Gamma = (nK + 5.0)/(nK + 3.0);
 
 const double 
 
-T0 = 1,
+T0 = 1.0/3,
 
-R0 = 1/3.0,
+R0 = 1.0,
 
 RT = R0*T0,
 
@@ -77,15 +77,17 @@ Lambda0 = 1/(2.0*R0*T0),
 
 Rho0 = 1.0,//4.5435E-2,//CS
 
-U0 = 0.0,//W_i*TC_r,
+U0 = 0.005,//W_i*TC_r,
 
 Ma = U0/sqrt(R0*T0),
 
-V0 = 0.0,
+V0 = U0,
 
 p0 = 1,
 
-Re = 0.0,
+Re = 10.0,
+
+// Mu0 = U0*ChLength*Rho0/Re,
 
 Mu0 = 0.1,
 
@@ -98,5 +100,25 @@ Nu0 = Mu0/Rho0,
 Tau0 = Nu0/RT,
 
 Kn = 16.0*Mu0/(5.0*Rho0*R0*T0)*sqrt(1.0/(4.0*Lambda0*PI));
+
+namespace ARK{
+
+int const 
+
+ND = 2,
+
+cellN = 4,
+
+cellF = 4,
+
+faceN = 2,
+
+faceF = 0;
+
+double const
+
+digits = 1e10;
+
+}
 
 #endif

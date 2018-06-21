@@ -17,6 +17,10 @@ void printSplitLine(char c)
 {
 	cout <<"----------------------------------"<<c<<endl;
 }
+void printErrorLine(char c)
+{
+	cout <<"||***?????????????????????????????***||"<<c<<endl;
+}
 void printErrorMessage(int line,const char *file,const char *func)
 {
 	cout<<"File : "<<file<<"  Line : "<<line<<"  fun : "<<func<<'\n';

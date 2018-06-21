@@ -7,17 +7,20 @@ MacroQuantity operator-(const MacroQuantity &lhs,const MacroQuantity &rhs)
 {
 	MQ tmp = lhs;
 	tmp -= rhs;
+//
 	return tmp;
 }
 MacroQuantity operator+(const MacroQuantity &lhs,const MacroQuantity &rhs)
 {
 	MQ tmp = lhs;
 	tmp += rhs;
+//
 	return tmp;
 }
 MacroQuantity operator*(double a,const MacroQuantity &rhs)
 {
 	MQ tmp;
+	tmp.Psi = a*rhs.Psi;
 	tmp.Phi = a*rhs.Phi;
 	tmp.Phi_x = a*rhs.Phi_x;
 	tmp.Phi_y = a*rhs.Phi_y;
@@ -35,8 +38,11 @@ MacroQuantity operator*(double a,const MacroQuantity &rhs)
 	tmp.T = a*rhs.T;
 	tmp.qx = a*rhs.qx;
 	tmp.qy = a*rhs.qy;
+//
 	tmp.Lambda = rhs.Lambda;
 	tmp.Mu = rhs.Mu;
+	tmp.scG = rhs.scG;
+//
 	return tmp;
 }
 MacroQuantity operator*(const MacroQuantity &lhs,double a)
@@ -45,6 +51,7 @@ MacroQuantity operator*(const MacroQuantity &lhs,double a)
 }
 MacroQuantity& MacroQuantity::operator-=(const MacroQuantity &rhs)
 {
+	Psi -= rhs.Psi;
 	Phi -= rhs.Phi;
 	Phi_x -= rhs.Phi_x;
 	Phi_y -= rhs.Phi_y;
@@ -60,12 +67,16 @@ MacroQuantity& MacroQuantity::operator-=(const MacroQuantity &rhs)
 	Fy -= rhs.Fy;
 	p -= rhs.p;
 	T -= rhs.T;
+//
 	Lambda = rhs.Lambda;
 	Mu = rhs.Mu;
+	scG = rhs.scG;
+//
 	return *this;
 }
 MacroQuantity& MacroQuantity::operator+=(const MacroQuantity &rhs)
 {
+	Psi += rhs.Psi;
 	Phi += rhs.Phi;
 	Phi_x += rhs.Phi_x;
 	Phi_y += rhs.Phi_y;
@@ -81,7 +92,10 @@ MacroQuantity& MacroQuantity::operator+=(const MacroQuantity &rhs)
 	Fy += rhs.Fy;
 	p += rhs.p;
 	T += rhs.T;
+//
 	Lambda = rhs.Lambda;
 	Mu = rhs.Mu;
+	scG = rhs.scG;
+//
 	return *this;
 }

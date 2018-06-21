@@ -16,15 +16,19 @@ void UniformFlow()
 			CellArray[n].MsQ() = Initial;
 			CellArray[n].MsQ().Fx = 0.0;
 			CellArray[n].MsQ().Fy = 0.0;
-
-		//
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			CellArray[n].f.tau = Tau0;
+			#endif
 			CellArray[n].Factor();
 			Update_phi_Eq(CellArray[n]);
 			for(int i = 0;i < DV_Qu;++i)
 			for(int j = 0;j < DV_Qv;++j)
 			{
+				//!momentum
+				#ifdef _ARK_MOMENTUM_FLIP
 				CellArray[n].f.Tilde[i][j]  = CellArray[n].f.Eq[i][j];
+				#endif
 //isothermal
 				#ifndef _ARK_ISOTHERMAL_FLIP
 				CellArray[n].g.Tilde[i][j]  = CellArray[n].g.Eq[i][j];
@@ -36,7 +40,10 @@ void UniformFlow()
 			FaceArray[n].MsQh() = Initial;
 			FaceArray[n].MsQh().Fx = 0.0;
 			FaceArray[n].MsQh().Fy = 0.0;
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			FaceArray[n].f.tauh = Tau0;
+			#endif
 			FaceArray[n].Factor();
 		}
 		#ifdef _P_INLET_4_BCS_FLIP
@@ -45,35 +52,41 @@ void UniformFlow()
 			for(int i = 0;i < DV_Qu;++i)
 			for(int j = 0;j < DV_Qv;++j)
 			{
+				//!momentum
+				#ifdef _ARK_MOMENTUM_FLIP
 				P_InletShadowCA[k].f.BarP[i][j] = P_InletShadowCA[k].Cell_C[0]->f.Eq[i][j];
 				P_InletShadowCA[k].f.BarP_x[i][j] = 0;
 				P_InletShadowCA[k].f.BarP_y[i][j] = 0;
-//isothermal
-			#ifndef _ARK_ISOTHERMAL_FLIP
+				#endif
+				//!isothermal
+				#ifndef _ARK_ISOTHERMAL_FLIP
 				P_InletShadowCA[k].g.BarP[i][j] = P_InletShadowCA[k].Cell_C[0]->gEq[i][j];
 				P_InletShadowCA[k].g.BarP_x[i][j] = 0;
 				P_InletShadowCA[k].g.BarP_y[i][j] = 0;
-			#endif			
+				#endif			
 			}
 		}
 		#endif
 		#ifdef _P_OUTLET_5_BCS_FLIP
-			for(int k = 0;k < P_OutletFaceNum;++k)
+		for(int k = 0;k < P_OutletFaceNum;++k)
+		{
+			for(int i = 0;i < DV_Qu;++i)
+			for(int j = 0;j < DV_Qv;++j)
 			{
-				for(int i = 0;i < DV_Qu;++i)
-				for(int j = 0;j < DV_Qv;++j)
-				{
-					P_OutletShadowCA[k].f.BarP[i][j] = P_OutletShadowCA[k].Cell_C[0]->f.Eq[i][j];
-					P_OutletShadowCA[k].f.BarP_x[i][j] = 0;
-					P_OutletShadowCA[k].f.BarP_y[i][j] = 0;
-//isothermal
-					#ifndef _ARK_ISOTHERMAL_FLIP
-					P_OutletShadowCA[k].g.BarP[i][j] = P_OutletShadowCA[k].Cell_C[0]->gEq[i][j];
-					P_OutletShadowCA[k].g.BarP_x[i][j] = 0;
-					P_OutletShadowCA[k].g.BarP_y[i][j] = 0;
-					#endif					
-				}
+				//!momentum
+				#ifdef _ARK_MOMENTUM_FLIP
+				P_OutletShadowCA[k].f.BarP[i][j] = P_OutletShadowCA[k].Cell_C[0]->f.Eq[i][j];
+				P_OutletShadowCA[k].f.BarP_x[i][j] = 0;
+				P_OutletShadowCA[k].f.BarP_y[i][j] = 0;
+				#endif
+				//!isothermal
+				#ifndef _ARK_ISOTHERMAL_FLIP
+				P_OutletShadowCA[k].g.BarP[i][j] = P_OutletShadowCA[k].Cell_C[0]->gEq[i][j];
+				P_OutletShadowCA[k].g.BarP_x[i][j] = 0;
+				P_OutletShadowCA[k].g.BarP_y[i][j] = 0;
+				#endif					
 			}
+		}
 		#endif
 }
 void ShockStructure()
@@ -87,7 +100,11 @@ void ShockStructure()
 		if(CellArray[n].xc <= 0)
 		{
 			CellArray[n].MsQ() = left;
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			CellArray[n].f.tau = Tau0;
+			#endif
+			//!energy
 			#ifndef _ARK_ISOTHERMAL_FLIP
 			CellArray[n].g.tau = Tau0;
 			#endif
@@ -95,7 +112,11 @@ void ShockStructure()
 		else
 		{
 			CellArray[n].MsQ() = right;
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			CellArray[n].f.tau = Tau_R;
+			#endif
+			//!Energy
 			#ifndef _ARK_ISOTHERMAL_FLIP
 			CellArray[n].g.tau = Tau_R;
 			#endif
@@ -106,8 +127,11 @@ void ShockStructure()
 		for(int i = 0;i < DV_Qu;++i)
 		for(int j = 0;j < DV_Qv;++j)
 		{
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			CellArray[n].f.Tilde[i][j] = CellArray[n].f.Eq[i][j];
-//isothermal
+			#endif
+			//isothermal
 			#ifndef _ARK_ISOTHERMAL_FLIP
 			CellArray[n].g.Tilde[i][j] = CellArray[n].g.Eq[i][j];
 			#endif
@@ -117,50 +141,67 @@ void ShockStructure()
 	for(int k = 0;k < P_InletFaceNum;++k)
 	{
 		P_InletFaceA[k]->MsQh() = left;
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		P_InletFaceA[k]->f.tauh = Tau0;
+		#endif
+		//!Energy
 		#ifndef _ARK_ISOTHERMAL_FLIP
 		P_InletFaceA[k]->g.tauh = Tau0;
 		#endif
+		//
 		P_InletFaceA[k]->Factor();
 		for(int i = 0;i < DV_Qu;++i)
 		for(int j = 0;j < DV_Qv;++j)
 		{
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			P_InletShadowCA[k].f.BarP[i][j] = P_InletFaceA[k]->owner->f.Eq[i][j];
 			P_InletShadowCA[k].f.BarP_x[i][j] = 0;		
 			P_InletShadowCA[k].f.BarP_y[i][j] = 0;
-//isothermal
-#ifndef _ARK_ISOTHERMAL_FLIP
+			#endif
+			//!isothermal
+			#ifndef _ARK_ISOTHERMAL_FLIP
 			P_InletShadowCA[k].g.BarP[i][j] = P_InletFaceA[k]->owner->gEq[i][j];
 			P_InletShadowCA[k].g.BarP_x[i][j] = 0;
 			P_InletShadowCA[k].g.BarP_y[i][j] = 0;
-#endif
+			#endif
 		}
 	}
-#endif
-#ifdef _P_OUTLET_5_BCS_FLIP
+	#endif
+	//
+	#ifdef _P_OUTLET_5_BCS_FLIP
 	for(int k = 0;k < P_OutletFaceNum;++k)
 	{
 		P_OutletFaceA[k]->MsQh() = right;
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		P_OutletFaceA[k]->f.tauh = Tau_R;
+		#endif
+		//!Energy
 		#ifndef _ARK_ISOTHERMAL_FLIP
 		P_OutletFaceA[k]->g.tauh = Tau_R;
 		#endif
+		//
 		P_OutletFaceA[k]->Factor();
 		for(int i = 0;i < DV_Qu;++i)
 		for(int j = 0;j < DV_Qv;++j)
 		{
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			P_OutletShadowCA[k].f.BarP[i][j] = P_OutletFaceA[k]->owner->f.Eq[i][j];
 			P_OutletShadowCA[k].f.BarP_x[i][j] = 0;
 			P_OutletShadowCA[k].f.BarP_y[i][j] = 0;
-//isothermal
-#ifndef _ARK_ISOTHERMAL_FLIP
+			#endif
+			//!isothermal
+			#ifndef _ARK_ISOTHERMAL_FLIP
 			P_OutletShadowCA[k].g.BarP[i][j] = P_OutletFaceA[k]->owner->gEq[i][j];
 			P_OutletShadowCA[k].g.BarP_x[i][j] = 0;
 			P_OutletShadowCA[k].g.BarP_y[i][j] = 0;
-#endif
+			#endif
 		}
 	}
-#endif
+	#endif
 }
 //
 void TaylorGreenVortex(double t,double x,double y,double &u, double &v, double &p)
@@ -194,34 +235,32 @@ void ForceDrivenTG()
 // CellArray[n].MsQ().V = U0*cos(2.0*PI*CellArray[n].xc)*cos(2.0*PI*CellArray[n].yc);
 // CellArray[n].MsQ().p = 0.25*Rho0*U0*U0*(cos(4.0*PI*CellArray[n].xc)-cos(4.0*PI*CellArray[n].yc));
 		CellArray[n].MsQ().Rho = Rho0 + 2.0*CellArray[n].MsQ().p*Lambda0;
-		CellArray[n].MsQ().Fx = 8.0*PI*PI*Nu0*CellArray[n].MsQ().U;
-		CellArray[n].MsQ().Fy = 8.0*PI*PI*Nu0*CellArray[n].MsQ().V;
+		CellArray[n].MsQ().Fx = 8.0*PI*PI*Nu0*CellArray[n].MsQ().U/ChLength/ChLength;
+		CellArray[n].MsQ().Fy = 8.0*PI*PI*Nu0*CellArray[n].MsQ().V/ChLength/ChLength;
 		CellArray[n].MsQ().T = T0;
 		CellArray[n].MsQ().Mu = Mu0;
 		CellArray[n].MsQ().Lambda = Lambda0;
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		CellArray[n].f.tau = Tau0;
+		#endif
 		CellArray[n].Factor();
 		Update_phi_Eq(CellArray[n]);
 		for(int i = 0;i < DV_Qu;++i)
 		for(int j = 0;j < DV_Qv;++j)
 		{
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			CellArray[n].f.Tilde[i][j] = CellArray[n].f.Eq[i][j];
+			#endif
 		}
 	}
 	for(int k = 0;k < PeriodicFaceNum;++k)
 	{
-		// PeriodicShadowCA[k].MsQ().Rho = PeriodicShadowCA[k].ShadowC->MsQ().Rho;
-		// PeriodicShadowCA[k].MsQ().U   = PeriodicShadowCA[k].ShadowC->MsQ().U;
-		// PeriodicShadowCA[k].MsQ().V   = PeriodicShadowCA[k].ShadowC->MsQ().V;
-		// PeriodicShadowCA[k].MsQ().T   = PeriodicShadowCA[k].ShadowC->MsQ().T;
-		// PeriodicShadowCA[k].MsQ().p   = PeriodicShadowCA[k].ShadowC->MsQ().p;
-		// PeriodicShadowCA[k].MsQ().Mu  = PeriodicShadowCA[k].ShadowC->MsQ().Mu;
-		// PeriodicShadowCA[k].MsQ().Lambda = PeriodicShadowCA[k].ShadowC->MsQ().Lambda;
-		// #ifdef _ARK_FORCE_FLIP
-		// PeriodicShadowCA[k].MsQ().Fx = PeriodicShadowCA[k].ShadowC->MsQ().Fx;
-		// PeriodicShadowCA[k].MsQ().Fy = PeriodicShadowCA[k].ShadowC->MsQ().Fy;
-		// #endif
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		PeriodicShadowCA[k].f.tau = Tau0;
+		#endif
 		PeriodicShadowCA[k].Factor();
 	}
 	for(int n = 0;n < Faces;++n)
@@ -233,16 +272,67 @@ void ForceDrivenTG()
 		// #endif
 		FaceArray[n].MsQh().Fx = 8.0*PI*PI*Nu0*U0*sin(2.0*PI*x/ChLength)*sin(2.0*PI*y/ChLength);
 		FaceArray[n].MsQh().Fy = 8.0*PI*PI*Nu0*U0*cos(2.0*PI*x/ChLength)*cos(2.0*PI*y/ChLength);
+		FaceArray[n].MsQh().Fx /= (ChLength*ChLength);
+		FaceArray[n].MsQh().Fy /= (ChLength*ChLength);
 		FaceArray[n].MsQh().T = T0;
 		FaceArray[n].MsQh().Mu  = Mu0;
 		FaceArray[n].MsQh().Lambda = Lambda0;
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		FaceArray[n].f.tauh = Tau0;
+		#endif
+		FaceArray[n].Factor();
+	}
+}
+void SCMP_FlatInterface()
+{
+	using namespace PseudoPotentialSC;
+	MacroQuantity Initial(Rho0,U0,V0,p0,T0,Lambda0,Mu0);
+	LoopPS(Cells)
+	{
+		CellArray[n].MsQ() = Initial;
+//------------------flat interface-----------------------
+		CellArray[n].MsQ().Rho = 		RhoV + 0.5*(RhoL-RhoV)
+								*(
+								  tanh(0.4*(CellArray[n].yc-0.25*ChLength))
+								  -
+								  tanh(0.4*(CellArray[n].yc-0.75*ChLength))
+								 );
+		CellArray[n].MsQ().p = CellArray[n].MsQ().Rho*RT;
+		CellArray[n].MsQ().Fx = 0.0;
+		CellArray[n].MsQ().Fy = 0.0;
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
+		CellArray[n].f.tau = Tau0;
+		#endif
+		CellArray[n].Factor();
+		Update_phi_Eq(CellArray[n]);
+		for(int i = 0;i < DV_Qu;++i)
+		for(int j = 0;j < DV_Qv;++j)
+		{
+			
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
+			CellArray[n].f.Tilde[i][j] = CellArray[n].f.Eq[i][j];
+			#endif
+		}
+	}
+	for(int n = 0;n < Faces;++n)
+	{
+		#ifdef _ARK_FORCE_FLIP
+		FaceArray[n].MsQh().Fx = 0.5*((FaceArray[n].neigh->msq->Fx) +(FaceArray[n].owner->msq->Fx));
+		FaceArray[n].MsQh().Fy = 0.5*((FaceArray[n].neigh->msq->Fy) +(FaceArray[n].owner->msq->Fy));
+		#endif
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
+		FaceArray[n].f.tauh = Tau0;
+		#endif
 		FaceArray[n].Factor();
 	}
 }
 void SCMP_Drop()
 {
-	using namespace PhaseFieldAC;
+	using namespace PseudoPotentialSC;
 	MacroQuantity Initial(Rho0,U0,V0,p0,T0,Lambda0,Mu0);
 	LoopPS(Cells)
 	{
@@ -255,13 +345,16 @@ void SCMP_Drop()
 		// 						  tanh(0.4*(CellArray[n].yc-0.75*ChLength))
 		// 						 );
 //------------------Drop with transition region----------------		
-		CellArray[n].MsQ().Rho = 0.5*(RhoL + RhoV)
-						 + 0.5*(RhoL - RhoV)*
-		 					tanh(2*(sqrt
+		CellArray[n].MsQ().Rho = 0.5*(RhoL + RhoV) - 0.5*(-RhoL + RhoV)*
+		 			tanh
+		 			(
+		 				2*(sqrt
 		 					(
-								(CellArray[n].xc-63.5)*(CellArray[n].xc-63.5)
-							+	(CellArray[n].yc-63.5)*(CellArray[n].yc-63.5)
-		 					)-radius)/5.0);
+								(CellArray[n].xc-0.5*ChLength)*(CellArray[n].xc-0.5*ChLength)
+							+	(CellArray[n].yc-0.5*ChLength)*(CellArray[n].yc-0.5*ChLength)
+		 					)-radius
+		 					)/5.0
+		 			);
 //------------------Drop with transition region--------------
 		// CellArray[n].MsQ().Rho = 0.5*(RhoL + RhoV) - 0.5*(RhoL - RhoV)*
 		// 					tanh(2*(sqrt(
@@ -271,13 +364,22 @@ void SCMP_Drop()
 		// 							)/(0.1*ChLength) 
 		// 						);
 
+		CellArray[n].MsQ().p = CellArray[n].MsQ().Rho*RT;
+		CellArray[n].MsQ().Fx = 0.0;
+		CellArray[n].MsQ().Fy = 0.0;
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		CellArray[n].f.tau = Tau0;
+		#endif
 		CellArray[n].Factor();
 		Update_phi_Eq(CellArray[n]);
 		for(int i = 0;i < DV_Qu;++i)
 		for(int j = 0;j < DV_Qv;++j)
 		{
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			CellArray[n].f.Tilde[i][j] = CellArray[n].f.Eq[i][j];
+			#endif
 		}
 	}
 	for(int n = 0;n < Faces;++n)
@@ -286,41 +388,79 @@ void SCMP_Drop()
 		FaceArray[n].MsQh().Fx = 0.5*((FaceArray[n].neigh->msq->Fx) +(FaceArray[n].owner->msq->Fx));
 		FaceArray[n].MsQh().Fy = 0.5*((FaceArray[n].neigh->msq->Fy) +(FaceArray[n].owner->msq->Fy));
 		#endif
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		FaceArray[n].f.tauh = Tau0;
+		#endif
 		FaceArray[n].Factor();
 	}
 }
-void AC_Drop()
+double AnalyticalPhiAC_Drop(double const x,double const y)
 {
 	using PhaseFieldAC::PhiL;
 	using PhaseFieldAC::PhiV;
 	using PhaseFieldAC::aPhi;
 	using PhaseFieldAC::bPhi;
-	using PhaseFieldAC::W_InterFace;
+	using PhaseFieldAC::centerX;
+	using PhaseFieldAC::centerY;
+	using PhaseFieldAC::wI;
 	using PhaseFieldAC::radius;
-//
+	// double phi = 
+	// 0.5*(PhiL+PhiV) + 0.5*(-PhiL + PhiV)*
+	// tanh
+	// (
+	// (sqrt((x-centerX)*(x-centerX) + (y-centerY)*(y-centerY))-radius)
+	// *2/wI
+	// );
+	double phi = 0;
+	if(sqrt((x-centerX)*(x-centerX) + (y-centerY)*(y-centerY)) > radius)
+	{
+		phi = PhiV;
+	}
+	else
+	{
+		phi = PhiL;
+	}
+	return phi;
+}
+void AC_ZalesakDisk()
+{
+	using PhaseFieldAC::PhiL;
+	using PhaseFieldAC::PhiV;
+	using PhaseFieldAC::aPhi;
+	using PhaseFieldAC::bPhi;
+	using PhaseFieldAC::centerX;
+	using PhaseFieldAC::centerY;
+	using PhaseFieldAC::wI;
+	using PhaseFieldAC::radius;
+	int slotL = centerX - 10;
+	int slotR = centerX + 10;
+
 	MacroQuantity init(Rho0,U0,V0,p0,T0,Lambda0,Mu0);
+
 	LoopPS(Cells)
 	{
+		double const &xc = CellArray[n].xc, &yc = CellArray[n].yc;
 		CellArray[n].MsQ() = init;
 		#ifdef _ARK_ALLENCAHN_FLIP
-		CellArray[n].MsQ().Phi = 0.5*(PhiL+PhiV) + 0.5*(-PhiL + PhiV)*
-		tanh
-		(
-			2*(sqrt(
-					(CellArray[n].xc-0.5*ChLength)*(CellArray[n].xc-0.5*ChLength)
-				 +	(CellArray[n].yc-0.5*ChLength)*(CellArray[n].yc-0.5*ChLength)
-				 )-radius
-			)/W_InterFace
-		);
+		CellArray[n].MsQ().Phi = AnalyticalPhiAC_Drop(xc,yc);
+		if(xc > slotL && xc < slotR && yc < centerY)
+		{
+			CellArray[n].MsQ().Phi = PhiV;
+		}
 		CellArray[n].MsQ().Rho = aPhi*(CellArray[n].MsQ().Phi) + bPhi;
 		#endif
-		
-//
+		//
+		CellArray[n].MsQ().U = -U0*PI/ChLength*(yc-centerY);
+		CellArray[n].MsQ().V = U0*PI/ChLength*(xc-centerX);
+		//
 		#ifdef _ARK_ALLENCAHN_FLIP
 		CellArray[n].h.tau = PhaseFieldAC::TauMass;
 		#endif
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		CellArray[n].f.tau = CellArray[n].MsQ().calcTau();
+		#endif
 		CellArray[n].Factor();
 		CellArray[n].FactorAC();
 		Update_phi_Eq(CellArray[n]);
@@ -329,7 +469,73 @@ void AC_Drop()
 			#ifdef _ARK_ALLENCAHN_FLIP
 			CellArray[n].h.Tilde[i][j] = CellArray[n].h.Eq[i][j];
 			#endif
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			CellArray[n].f.Tilde[i][j] = CellArray[n].f.Eq[i][j];
+			#endif
+		}		
+	}
+	LoopPS(Faces)
+	{
+		FaceArray[n].MsQh() = init;
+		FaceArray[n].MsQh().U = -U0*PI/ChLength*(FaceArray[n].yf-centerY);
+		FaceArray[n].MsQh().V = U0*PI/ChLength*(FaceArray[n].xf-centerX);
+		#ifdef _ARK_ALLENCAHN_FLIP
+		FaceArray[n].h.tauh = PhaseFieldAC::TauMass;
+		#endif
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
+		FaceArray[n].f.tauh = FaceArray[n].MsQh().calcTau();
+		#endif
+		FaceArray[n].Factor();
+		FaceArray[n].FactorAC();
+	}
+}
+void AC_Smoothed()
+{
+	using PhaseFieldAC::PhiL;
+	using PhaseFieldAC::PhiV;
+	using PhaseFieldAC::aPhi;
+	using PhaseFieldAC::bPhi;
+	using PhaseFieldAC::wI;
+	using PhaseFieldAC::radius;
+	//
+	MacroQuantity init(Rho0,U0,V0,p0,T0,Lambda0,Mu0);
+	LoopPS(Cells)
+	{
+		double &xc = CellArray[n].xc, &yc = CellArray[n].yc;
+		CellArray[n].MsQ() = init;
+
+		#ifdef _ARK_ALLENCAHN_FLIP
+		CellArray[n].MsQ().Phi = AnalyticalPhiAC_Drop(xc,yc);
+		CellArray[n].MsQ().Rho = aPhi*(CellArray[n].MsQ().Phi) + bPhi;
+		#endif
+
+		CellArray[n].MsQ().U = 
+		-U0*sin(4*PI*xc/ChLength)*sin(4*PI*yc/ChLength);
+		CellArray[n].MsQ().V = 
+		-U0*cos(4*PI*xc/ChLength)*cos(4*PI*yc/ChLength);
+		
+	//
+		#ifdef _ARK_ALLENCAHN_FLIP
+		CellArray[n].h.tau = PhaseFieldAC::TauMass;
+		#endif
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
+		CellArray[n].f.tau = CellArray[n].MsQ().calcTau();
+		#endif
+		CellArray[n].Factor();
+		CellArray[n].FactorAC();
+		Update_phi_Eq(CellArray[n]);
+		LoopVS(DV_Qu,DV_Qv)
+		{
+			#ifdef _ARK_ALLENCAHN_FLIP
+			CellArray[n].h.Tilde[i][j] = CellArray[n].h.Eq[i][j];
+			#endif
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
+			CellArray[n].f.Tilde[i][j] = CellArray[n].f.Eq[i][j];
+			#endif
 		}		
 	}
 	LoopPS(Faces)
@@ -338,7 +544,130 @@ void AC_Drop()
 		#ifdef _ARK_ALLENCAHN_FLIP
 		FaceArray[n].h.tauh = PhaseFieldAC::TauMass;
 		#endif
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		FaceArray[n].f.tauh = FaceArray[n].MsQh().calcTau();
+		#endif
+		FaceArray[n].Factor();
+		FaceArray[n].FactorAC();
+	}
+}
+void AC_ShearFlow()
+{
+		using PhaseFieldAC::PhiL;
+		using PhaseFieldAC::PhiV;
+		using PhaseFieldAC::aPhi;
+		using PhaseFieldAC::bPhi;
+		using PhaseFieldAC::wI;
+		using PhaseFieldAC::radius;
+	//
+		MacroQuantity init(Rho0,U0,V0,p0,T0,Lambda0,Mu0);
+		LoopPS(Cells)
+		{
+			CellArray[n].MsQ() = init;
+			#ifdef _ARK_ALLENCAHN_FLIP
+			CellArray[n].MsQ().Phi = AnalyticalPhiAC_Drop(CellArray[n].xc,CellArray[n].yc);
+			CellArray[n].MsQ().Rho = aPhi*(CellArray[n].MsQ().Phi) + bPhi;
+			#endif
+			CellArray[n].MsQ().U = 
+			U0*PI*sin(PI*CellArray[n].xc/ChLength)*cos(PI*CellArray[n].yc/ChLength);
+
+			CellArray[n].MsQ().V = 
+			-U0*PI*cos(PI*CellArray[n].xc/ChLength)*sin(PI*CellArray[n].yc/ChLength);
+
+			
+	//
+			#ifdef _ARK_ALLENCAHN_FLIP
+			CellArray[n].h.tau = PhaseFieldAC::TauMass;
+			#endif
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
+			CellArray[n].f.tau = CellArray[n].MsQ().calcTau();
+			#endif
+			CellArray[n].Factor();
+			CellArray[n].FactorAC();
+			Update_phi_Eq(CellArray[n]);
+			LoopVS(DV_Qu,DV_Qv)
+			{
+				#ifdef _ARK_ALLENCAHN_FLIP
+				CellArray[n].h.Tilde[i][j] = CellArray[n].h.Eq[i][j];
+				#endif
+				//!momentum
+				#ifdef _ARK_MOMENTUM_FLIP
+				CellArray[n].f.Tilde[i][j] = CellArray[n].f.Eq[i][j];
+				#endif
+			}		
+		}
+		LoopPS(Faces)
+		{
+			FaceArray[n].MsQh() = init;
+
+			FaceArray[n].MsQh().U = 
+			U0*PI*sin(PI*FaceArray[n].xf/ChLength)*cos(PI*FaceArray[n].yf/ChLength);
+
+			FaceArray[n].MsQh().V = 
+			-U0*PI*cos(PI*FaceArray[n].xf/ChLength)*sin(PI*FaceArray[n].yf/ChLength);
+			#ifdef _ARK_ALLENCAHN_FLIP
+			FaceArray[n].h.tauh = PhaseFieldAC::TauMass;
+			#endif
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
+			FaceArray[n].f.tauh = FaceArray[n].MsQh().calcTau();
+			#endif
+			FaceArray[n].Factor();
+			FaceArray[n].FactorAC();
+		}
+}
+void AC_Drop()
+{
+	using PhaseFieldAC::PhiL;
+	using PhaseFieldAC::PhiV;
+	using PhaseFieldAC::aPhi;
+	using PhaseFieldAC::bPhi;
+	using PhaseFieldAC::wI;
+	using PhaseFieldAC::radius;
+//
+	MacroQuantity init(Rho0,U0,V0,p0,T0,Lambda0,Mu0);
+	LoopPS(Cells)
+	{
+		CellArray[n].MsQ() = init;
+		#ifdef _ARK_ALLENCAHN_FLIP
+		CellArray[n].MsQ().Phi = AnalyticalPhiAC_Drop(CellArray[n].xc,CellArray[n].yc);
+		CellArray[n].MsQ().Rho = aPhi*(CellArray[n].MsQ().Phi) + bPhi;
+		#endif
+		
+//
+		#ifdef _ARK_ALLENCAHN_FLIP
+		CellArray[n].h.tau = PhaseFieldAC::TauMass;
+		#endif
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
+		CellArray[n].f.tau = CellArray[n].MsQ().calcTau();
+		#endif
+		CellArray[n].Factor();
+		CellArray[n].FactorAC();
+		Update_phi_Eq(CellArray[n]);
+		LoopVS(DV_Qu,DV_Qv)
+		{
+			#ifdef _ARK_ALLENCAHN_FLIP
+			CellArray[n].h.Tilde[i][j] = CellArray[n].h.Eq[i][j];
+			#endif
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
+			CellArray[n].f.Tilde[i][j] = CellArray[n].f.Eq[i][j];
+			#endif
+		}		
+	}
+	LoopPS(Faces)
+	{
+		FaceArray[n].MsQh() = init;
+		#ifdef _ARK_ALLENCAHN_FLIP
+		FaceArray[n].h.tauh = PhaseFieldAC::TauMass;
+		#endif
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
+		FaceArray[n].f.tauh = FaceArray[n].MsQh().calcTau();
+		#endif
 		FaceArray[n].Factor();
 		FaceArray[n].FactorAC();
 	}
@@ -349,7 +678,7 @@ void AC_RisingBubble()
 	using PhaseFieldAC::PhiV;
 	using PhaseFieldAC::aPhi;
 	using PhaseFieldAC::bPhi;
-	using PhaseFieldAC::W_InterFace;
+	using PhaseFieldAC::wI;
 	using PhaseFieldAC::centerX;
 	using PhaseFieldAC::centerY;
 	using PhaseFieldAC::radius;
@@ -365,14 +694,17 @@ void AC_RisingBubble()
 					(CellArray[n].xc-centerX)*(CellArray[n].xc-centerX)
 				 +	(CellArray[n].yc-centerY)*(CellArray[n].yc-centerY)
 				 )-radius
-			)/W_InterFace
+			)/wI
 		);
 		CellArray[n].MsQ().Rho = aPhi*(CellArray[n].MsQ().Phi) + bPhi;
 		CellArray[n].h.tau = PhaseFieldAC::TauMass;
 		#else
 		cout <<"idiocy!!!"<<endl;
 		#endif
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		CellArray[n].f.tau = CellArray[n].MsQ().calcTau();
+		#endif
 		CellArray[n].Factor();
 		CellArray[n].FactorAC();
 		Update_phi_Eq(CellArray[n]);
@@ -381,7 +713,10 @@ void AC_RisingBubble()
 			#ifdef _ARK_ALLENCAHN_FLIP
 			CellArray[n].h.Tilde[i][j] = CellArray[n].h.Eq[i][j];
 			#endif
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			CellArray[n].f.Tilde[i][j] = CellArray[n].f.Eq[i][j];
+			#endif
 		}	
 	}
 	LoopPS(Faces)
@@ -390,7 +725,10 @@ void AC_RisingBubble()
 		#ifdef _ARK_ALLENCAHN_FLIP
 		FaceArray[n].h.tauh = PhaseFieldAC::TauMass;
 		#endif
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		FaceArray[n].f.tauh = FaceArray[n].MsQh().calcTau();
+		#endif
 		FaceArray[n].Factor();
 		FaceArray[n].FactorAC();
 	}
@@ -418,20 +756,23 @@ void AC_LayeredPoiseuille()
 	using PhaseFieldAC::RhoV;
 	using PhaseFieldAC::aPhi;
 	using PhaseFieldAC::bPhi;
-	using PhaseFieldAC::W_InterFace;
+	using PhaseFieldAC::wI;
 	double const MidY = 0;
 	MacroQuantity init(Rho0,U0,V0,p0,T0,Lambda0,Mu0);
 	LoopPS(Cells)
 	{
 		CellArray[n].MsQ() = init;
 		#ifdef _ARK_ALLENCAHN_FLIP
-		CellArray[n].MsQ().Phi = 0.5*(PhiL+PhiV) + 0.5*(PhiL-PhiV)*tanh((MidY-2*CellArray[n].yc)/W_InterFace);
-		CellArray[n].MsQ().Rho = 0.5*(RhoL+RhoV) + 0.5*(RhoL-RhoV)*tanh((MidY-2*CellArray[n].yc)/W_InterFace);		CellArray[n].h.tau = PhaseFieldAC::TauMass;
+		CellArray[n].MsQ().Phi = 0.5*(PhiL+PhiV) + 0.5*(PhiL-PhiV)*tanh((MidY-2*CellArray[n].yc)/wI);
+		CellArray[n].MsQ().Rho = 0.5*(RhoL+RhoV) + 0.5*(RhoL-RhoV)*tanh((MidY-2*CellArray[n].yc)/wI);		CellArray[n].h.tau = PhaseFieldAC::TauMass;
 		CellArray[n].FactorAC();
 		#else
 		cout <<"idiocy!!!"<<endl;
 		#endif
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		CellArray[n].f.tau = Tau0;
+		#endif
 		CellArray[n].Factor();
 		Update_phi_Eq(CellArray[n]);
 		LoopVS(DV_Qu,DV_Qv)
@@ -439,7 +780,10 @@ void AC_LayeredPoiseuille()
 			#ifdef _ARK_ALLENCAHN_FLIP
 			CellArray[n].h.Tilde[i][j] = CellArray[n].h.Eq[i][j];
 			#endif
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			CellArray[n].f.Tilde[i][j] = CellArray[n].f.Eq[i][j];
+			#endif
 		}	
 	}
 	LoopPS(Faces)
@@ -449,7 +793,10 @@ void AC_LayeredPoiseuille()
 		FaceArray[n].h.tauh = PhaseFieldAC::TauMass;
 		FaceArray[n].FactorAC();
 		#endif
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		FaceArray[n].f.tauh = Tau0;
+		#endif
 		FaceArray[n].Factor();
 	}
 	#ifdef _Wall_3_BCs_FLIP
@@ -458,7 +805,10 @@ void AC_LayeredPoiseuille()
 		WallShadowCA[k].MsQ() = init;
 		WallShadowCA[k].MsQ().U = 0;
 		WallShadowCA[k].MsQ().V = 0;
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		WallShadowCA[k].f.tau = Tau0;
+		#endif
 		WallShadowCA[k].Factor();
 	}
 	#endif
@@ -502,13 +852,19 @@ void LidDrivenSquare()
 	for(int n = 0;n < Cells;++n)
 	{
 		CellArray[n].MsQ() = init;
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		CellArray[n].f.tau = Tau0;
+		#endif
 		CellArray[n].Factor();
 		Update_phi_Eq(CellArray[n]);
 		for(int i = 0;i < DV_Qu;++i)
 		for(int j = 0;j < DV_Qv;++j)
 		{
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			CellArray[n].f.Tilde[i][j] = CellArray[n].f.Eq[i][j];
+			#endif
 			#ifndef _ARK_ISOTHERMAL_FLIP
 			CellArray[n].g.Tilde[i][j] = CellArray[n].g.Eq[i][j];
 			#endif
@@ -531,7 +887,10 @@ void LidDrivenSquare()
 			FaceArray[n].neigh->MsQ().U = 0;
 			FaceArray[n].neigh->MsQ().V = 0;
 		}
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		FaceArray[n].f.tauh = Tau0;
+		#endif
 		FaceArray[n].Factor();
 	}
 	for(int k = 0;k < WallFaceNum;++k)
@@ -539,7 +898,10 @@ void LidDrivenSquare()
 		WallShadowCA[k].MsQ() = init;
 		WallShadowCA[k].MsQ().U = 0;
 		WallShadowCA[k].MsQ().V = 0;
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		WallShadowCA[k].f.tau = Tau0;
+		#endif
 		WallShadowCA[k].Factor();
 	}
 }
@@ -613,22 +975,30 @@ void TaylorCouetteInitialization()
 		cell.MsQ() = init;
 		cell.MsQ().U = 0;
 		cell.MsQ().V = 0;
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		cell.f.tau = Tau0;
+		#endif
 		cell.Factor();
 		Update_phi_Eq(cell);
 		for(int i = 0;i < DV_Qu;++i)
 		for(int j = 0;j < DV_Qv;++j)
 		{
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			cell.f.Tilde[i][j] = cell.f.Eq[i][j];
+			#endif
 		}
 	}
 	for(int k = 0;k < WallFaceNum;++k)
 	{
 		WallShadowCA[k].MsQ() = init;
-
 		WallShadowCA[k].MsQ().U = 0;
 		WallShadowCA[k].MsQ().V = 0;
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		WallShadowCA[k].f.tau = Tau0;
+		#endif
 		WallShadowCA[k].Factor();
 	}
 }
@@ -754,22 +1124,18 @@ void TaylorCouetteInitialization()
 void SelfCheck()
 {
 //
+	#if defined _ARK_FORCE_FLIP && defined _ARK_STRANGSPLIT_FLIP
+	#error "Fatal Error : Source model collision"
+	#endif
+//
+	#if defined _ARK_ALLENCAHN_FLIP && defined _ARK_PSEUDOPSI_FLIP
+	#error "Fatal Error : multiphase model collision"
+	#endif
+//
 	#if defined _FLUX_SCHEME_CD_ARK && defined _FLUX_SCHEME_UW_ARK
-	{
-		_PRINT_ERROR_MSG_FLIP
-		cout <<"Fatal Error : Flux Scheme collision"<<endl;
-		getchar();
-		exit(0);
-	}
+	#error "Fatal Error : Flux Scheme collision"
 	#endif
-	#if !defined _FLUX_SCHEME_CD_ARK && !defined _FLUX_SCHEME_UW_ARK
-	{
-		_PRINT_ERROR_MSG_FLIP
-		cout <<"Fatal Error : Flux Scheme Empty"<<endl;
-		getchar();
-		exit(0);
-	}
-	#endif
+//
 	#ifdef _Wall_3_BCs_NEE
 	string _bc_ark = _BC_ARK;
 	if("NEE" != _bc_ark)

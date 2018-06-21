@@ -471,15 +471,6 @@ int MeshCheck()
 	cout <<"Cell Checking..." <<endl;
 	for(int i = 0;i < Cells;++i)
 	{
-		// if
-		// (
-		// 	  *CellArray[i].use != *CellArray[i].f.token
-		// )
-		// {
-		// 	_PRINT_ERROR_MSG_FLIP
-		// 	cout << "use != token in Cell index : "<<i<<'\n';
-		// 	getchar();
-		// }
 		for(int iF = 0;iF < CellArray[i].celltype;++iF)
 		{
 			if(nullptr == CellArray[i].Cell_C[iF])
@@ -523,9 +514,11 @@ int MeshCheck()
 		}
 		if(nullptr != CellArray[i].ShadowC)
 		{
+			printErrorLine();
 			_PRINT_ERROR_MSG_FLIP
-			cout <<"CellArray : " << i <<endl;
-			getchar();
+			cout <<"Inner Cell has a shadow Cell : " << i <<endl;
+			printErrorLine('\n');
+			exit(-1);
 		}
 		if(3 == CellArray[i].celltype)
 		{
@@ -635,7 +628,179 @@ int MeshCheck()
 	cout <<nl;
 	#ifdef _CARTESIAN_MESH_FLIP
 	printSplitLine();
-	cout <<"Catesian Cell Checking..." <<endl;
+	cout <<"Cartesian Cell Checking..." <<endl;
+	//!------------Check if faceFaces were in right order or not---------------------
+	#if !defined _Wall_3_BCs_FLIP
+	LoopPS(Faces)
+	{
+		Face_2D const &face = FaceArray[n];
+		if
+		(
+			doubleEqual(face.faceFaces[1]->xf-face.xf,dx)
+			&& 
+		 	doubleEqual(face.faceFaces[1]->xf-face.xf+Lx,dx)
+		)
+		{
+			printErrorLine();
+			_PRINT_ERROR_MSG_FLIP
+			cout <<"faceFaces[1]->xf - face.xf : "<<fs
+				 <<face.faceFaces[1]->xf - face.xf<<endl;
+			printErrorLine('\n');
+			exit(-1);
+		}
+		if
+		(
+			doubleEqual(face.xf-face.faceFaces[5]->xf,dx)
+			&& 
+		 	doubleEqual(face.xf-face.faceFaces[5]->xf+Lx,dx)
+		)
+		{
+			printErrorLine();
+			_PRINT_ERROR_MSG_FLIP
+			cout <<"face.xf-face.faceFaces[5]->xf : "<<fs
+				 <<face.xf-face.faceFaces[5]->xf<<endl;
+			printErrorLine('\n');
+			exit(-1);
+		}
+		if
+		(
+			doubleEqual(face.faceFaces[3]->yf-face.yf,dy)
+			&& 
+		 	doubleEqual(face.faceFaces[3]->yf-face.yf+Ly,dy)
+		)
+		{
+			printErrorLine();
+			_PRINT_ERROR_MSG_FLIP
+			cout <<"face.yf-face.faceFaces[3]->yf : "<<fs
+				 <<face.yf-face.faceFaces[3]->yf<<endl;
+			printErrorLine('\n');
+			exit(-1);
+		}
+		if
+		(
+			doubleEqual(face.yf-face.faceFaces[7]->yf,dy)
+			&& 
+		 	doubleEqual(face.yf-face.faceFaces[7]->yf+Ly,dy)
+		)
+		{
+			printErrorLine();
+			_PRINT_ERROR_MSG_FLIP
+			cout <<"face.yf-face.faceFaces[7]->yf : "<<fs
+				 <<face.yf-face.faceFaces[7]->yf<<endl;
+			printErrorLine('\n');
+			exit(-1);
+		}
+		if(!doubleEqual(face.faceFaces[1]->yf,face.yf))
+		{
+			printErrorLine();
+			_PRINT_ERROR_MSG_FLIP
+			cout <<"faceFaces[1]->yf != face.yf"<<endl;
+			cout <<"faceFaces[1]->yf : "<<face.faceFaces[1]->yf<<fs
+				 <<"face.yf :"<<face.yf<<endl;
+			printErrorLine('\n');
+			exit(-1);
+		}
+		if(!doubleEqual(face.faceFaces[3]->xf,face.xf))
+		{
+			printErrorLine();
+			_PRINT_ERROR_MSG_FLIP
+			cout <<"faceFaces[3]->xf != face.xf"<<endl;
+			cout <<"faceFaces[3]->xf : "<<face.faceFaces[3]->xf<<fs
+				 <<"face.xf :"<<face.xf<<endl;
+			printErrorLine('\n');
+			exit(-1);
+		}
+		if(!doubleEqual(face.faceFaces[5]->yf,face.yf))
+		{
+			printErrorLine();
+			_PRINT_ERROR_MSG_FLIP
+			cout <<"faceFaces[5]->yf != face.yf"<<endl;
+			cout <<"faceFaces[5]->yf : "<<face.faceFaces[5]->yf<<fs
+				 <<"face.yf :"<<face.yf<<endl;
+			printErrorLine('\n');
+			exit(-1);
+		}
+		if(!doubleEqual(face.faceFaces[7]->xf,face.xf))
+		{
+			printErrorLine();
+			_PRINT_ERROR_MSG_FLIP
+			cout <<"faceFaces[7]->xf != face.xf"<<endl;
+			cout <<"faceFaces[7]->xf : "<<face.faceFaces[7]->xf<<fs
+				 <<"face.xf :"<<face.xf<<endl;
+			printErrorLine('\n');
+			exit(-1);
+		}
+		if
+		(
+			!doubleEqual(face.faceFaces[2]->xf,face.faceFaces[1]->xf)
+			||
+			!doubleEqual(face.faceFaces[2]->yf,face.faceFaces[3]->yf)
+		)
+		{
+			printErrorLine();
+			_PRINT_ERROR_MSG_FLIP
+			cout <<"faceFaces[2] doesn't match"<<endl;
+			cout <<"faceFaces[2]->xf : "<<face.faceFaces[2]->xf<<fs
+				 <<"faceFaces[1]->xf : "<<face.faceFaces[1]->xf<<fs
+				 <<"faceFaces[2]->yf : "<<face.faceFaces[2]->yf<<fs
+				 <<"faceFaces[3]->yf : "<<face.faceFaces[3]->yf<<endl;
+			printErrorLine('\n');
+			exit(-1);
+		}
+		if
+		(
+			!doubleEqual(face.faceFaces[4]->xf,face.faceFaces[5]->xf)
+			||
+			!doubleEqual(face.faceFaces[4]->yf,face.faceFaces[3]->yf)
+		)
+		{
+			printErrorLine();
+			_PRINT_ERROR_MSG_FLIP
+			cout <<"faceFaces[4] doesn't match"<<endl;
+			cout <<"face.xf : "<<face.xf<<fs<<"face.yf : "<<face.yf<<endl;
+			cout <<"faceFaces[4]->xf : "<<face.faceFaces[4]->xf<<fs
+				 <<"faceFaces[5]->xf : "<<face.faceFaces[5]->xf<<fs
+				 <<"faceFaces[4]->yf : "<<face.faceFaces[4]->yf<<fs
+				 <<"faceFaces[3]->yf : "<<face.faceFaces[3]->yf<<endl;
+			printErrorLine('\n');
+			exit(-1);
+		}
+		if
+		(
+			!doubleEqual(face.faceFaces[6]->xf,face.faceFaces[5]->xf)
+			||
+			!doubleEqual(face.faceFaces[6]->yf,face.faceFaces[7]->yf)
+		)
+		{
+			printErrorLine();
+			_PRINT_ERROR_MSG_FLIP
+			cout <<"faceFaces[6] doesn't match"<<endl;
+			cout <<"faceFaces[6]->xf : "<<face.faceFaces[6]->xf<<fs
+				 <<"faceFaces[5]->xf : "<<face.faceFaces[5]->xf<<fs
+				 <<"faceFaces[6]->yf : "<<face.faceFaces[6]->yf<<fs
+				 <<"faceFaces[7]->yf : "<<face.faceFaces[7]->yf<<endl;
+			printErrorLine('\n');
+			exit(-1);
+		}
+		if
+		(
+			!doubleEqual(face.faceFaces[8]->xf,face.faceFaces[1]->xf)
+			||
+			!doubleEqual(face.faceFaces[8]->yf,face.faceFaces[7]->yf)
+		)
+		{
+			printErrorLine();
+			_PRINT_ERROR_MSG_FLIP
+			cout <<"faceFaces[8] doesn't match"<<endl;
+			cout <<"faceFaces[8]->xf : "<<face.faceFaces[8]->xf<<fs
+				 <<"faceFaces[1]->xf : "<<face.faceFaces[1]->xf<<fs
+				 <<"faceFaces[8]->yf : "<<face.faceFaces[8]->yf<<fs
+				 <<"faceFaces[7]->yf : "<<face.faceFaces[7]->yf<<endl;
+			printErrorLine('\n');
+			exit(-1);
+		}
+	}
+	#endif
 	LoopPS(Faces)
 	{
 		Face_2D &face = FaceArray[n];
@@ -650,7 +815,6 @@ int MeshCheck()
 			cout <<"faceCells x coordinates doesn't match with the face"<<endl;
 			cout <<"face.xf : "<<face.xf<<"    "<<"average xc : "<<0.25*x4<<endl;
 			_PRINT_ERROR_MSG_FLIP
-			getchar();
 			exit(-1);
 		}
 		if(!doubleEqual(face.yf,0.25*y4))
@@ -849,7 +1013,7 @@ int MeshCheck()
 		getchar();
 		exit(0);
 	}
-	cout <<"Catesian Cell Check Done" <<endl;
+	cout <<"Cartesian Cell Check Done" <<endl;
 	_PRINT_SPLITLINE_ARK
 	cout<<nl;
 	#endif

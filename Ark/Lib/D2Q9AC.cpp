@@ -15,7 +15,7 @@ using std::cout;
 // int const _BB[DV_Qv] = {0,3,4,1,2,7,8,5,6};
 
 // }
-
+extern const char DmQnName[] = "D2Q9AC"; 
 
 extern double * const xi_u = new double[DV_Qv];
 
@@ -40,6 +40,7 @@ void MacroQuantity::calcMu()
 			  (Phi-PhaseFieldAC::PhiV)*PhaseFieldAC::MuV 
 			+ (PhaseFieldAC::PhiL-Phi)*PhaseFieldAC::MuL
 			);
+
 		// Mu = PhaseFieldAC::NuV*PhaseFieldAC::NuL/
 		// 	( 
 		// 	  (Phi-PhaseFieldAC::PhiV)*PhaseFieldAC::NuV 
@@ -69,13 +70,12 @@ void Update_phi_Eq(Cell_2D &cell)
 	{
 		u1 = (xi_u[QuIndex]*cell.MsQ().U + xi_v[j]*cell.MsQ().V)/RT;
 		GAMMA = u1 + 0.5*u1*u1 - uu*Lambda0;
-		//cell.f.Eq[i][j] = omega[j]*(cell.MsQ().Rho + Rho0*(u1 + 0.5*u1*u1 - uu*Lambda0));
-		//cell.f.Eq[i][j] = omega[j]*cell.MsQ().Rho*(1.0 + u1 + 0.5*u1*u1 - uu*Lambda0);
+//
 		#ifdef _ARK_ALLENCAHN_FLIP
 		cell.h.Eq[i][j] = omega[j]*(1.0 + u1) * (cell.MsQ().Phi);
 		#endif
-		//
-		//cell.f.Eq[i][j] = omega[j]*(cell.MsQ().p + cell.MsQ().Rho*RT*GAMMA);
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		cell.f.Eq[i][j] = omega[j]*(cell.MsQ().p/RT + cell.MsQ().Rho*GAMMA)
 						 - static_cast<int>(!j)*cell.MsQ().p/RT;
 		//
@@ -95,6 +95,7 @@ void Update_phi_Eq(Cell_2D &cell)
 		// +	u1*(xi_u[QuIndex]*(cell.MsQ().Rho_x) + xi_v[j]*(cell.MsQ().Rho_y))
 		// );
 		#endif
+		#endif
 	}
 }
 void Update_phi_Eqh(Face_2D &face)
@@ -113,6 +114,7 @@ void Update_phi_Eqh(Face_2D &face)
 		#endif
 		//
 		//face.f.EqhDt[i][j] = omega[j]*(face.MsQh().p + face.MsQh().Rho*RT*GAMMA);
+		#ifdef _ARK_MOMENTUM_FLIP
 		face.f.EqhDt[i][j] = omega[j]*(face.MsQh().p/RT + face.MsQh().Rho*GAMMA)
 							 - static_cast<int>(!j)*face.MsQh().p/RT;
 //
@@ -132,6 +134,7 @@ void Update_phi_Eqh(Face_2D &face)
 		// +	u1*(xi_u[QuIndex]*face.MsQh().Rho_x + xi_v[j]*face.MsQh().Rho_y)
 		// );
 		#endif
+		#endif
 	}
 }
 
@@ -142,7 +145,24 @@ void Update_MacroVar(Cell_2D& cell)
 	#endif
 	//
 	cell.MsQ().Rho  = aPhi*cell.MsQ().Phi + bPhi;
+
+	//--------------------------------smoothed flow---------------------------
+	// double &xc = cell.xc, &yc = cell.yc;
+	// cell.MsQ().U = 
+	// -U0*sin(4*PI*xc/ChLength)*sin(4*PI*yc/ChLength)*cos(PI*(step+1)*dt/PhaseFieldAC::T);
+	// cell.MsQ().V = 
+	// -U0*cos(4*PI*xc/ChLength)*cos(4*PI*yc/ChLength)*cos(PI*(step+1)*dt/PhaseFieldAC::T);
+	//--------------------------------shear flow-------------------------------
+	// if(step == PhaseFieldAC::T)
+	// {
+	// 	cell.MsQ().U = 
+	// 	-U0*PI*sin(PI*cell.xc/ChLength)*cos(PI*cell.yc/ChLength);
+	// 	cell.MsQ().V = 
+	// 	U0*PI*cos(PI*cell.xc/ChLength)*sin(PI*cell.yc/ChLength);
+	// }
 //
+	//!momentum
+	#ifdef _ARK_MOMENTUM_FLIP
 	cell.MsQ().U    = (IntegralGH(DV_Qv,cell.f.Tilde[0],xi_u))/(cell.MsQ().Rho);
 	cell.MsQ().V    = (IntegralGH(DV_Qv,cell.f.Tilde[0],xi_v))/(cell.MsQ().Rho);
 	#ifdef _ARK_FORCE_FLIP
@@ -161,6 +181,7 @@ void Update_MacroVar(Cell_2D& cell)
 	cell.MsQ().calcMu();
 	cell.f.tau = cell.MsQ().calcTau();
 	cell.Factor();
+	#endif
 //
 	// cell.MsQ().U    = (IntegralGH(cell.f.Tilde[0],xi_u))/(cell.MsQ().Rho*RT);
 	// cell.MsQ().V    = (IntegralGH(cell.f.Tilde[0],xi_v))/(cell.MsQ().Rho*RT);
@@ -187,22 +208,39 @@ void Update_MacroVar(Cell_2D& cell)
 void Update_MacroVar_h(Face_2D& face)
 {
 
-//	face.Ms_h = 0.5*(*(face.owner->Ms) + *(face.neigh->Ms));
 	face.MsQh().Phi_x = 0.5*((face.owner->msq->Phi_x) + (face.neigh->msq->Phi_x));
 	face.MsQh().Phi_y = 0.5*((face.owner->msq->Phi_y) + (face.neigh->msq->Phi_y));
-//MsQh().
+	//!momentum
+	#ifdef _ARK_MOMENTUM_FLIP
 	face.MsQh().Rho_x = 0.5*((face.owner->msq->Rho_x) + (face.neigh->msq->Rho_x));
 	face.MsQh().Rho_y = 0.5*((face.owner->msq->Rho_y) + (face.neigh->msq->Rho_y));
 
 	face.MsQh().Fx = 0.5*((face.owner->msq->Fx) + (face.neigh->msq->Fx));
 	face.MsQh().Fy = 0.5*((face.owner->msq->Fy) + (face.neigh->msq->Fy));
+	#endif
 
 	#ifdef _ARK_ALLENCAHN_FLIP
 	face.MsQh().Phi  = IntegralGH(DV_Qv,face.h.BhDt[0]);
 	#endif
 	//
 	face.MsQh().Rho  = aPhi*face.MsQh().Phi + bPhi;
+	//--------------------------------smoothed flow---------------------------
+	// double &xf = face.xf, &yf = face.yf;
+	// face.MsQh().U = 
+	// -U0*sin(4*PI*xf/ChLength)*sin(4*PI*yf/ChLength)*cos(PI*(step+0.5)*dt/PhaseFieldAC::T);
+	// face.MsQh().V = 
+	// -U0*cos(4*PI*xf/ChLength)*cos(4*PI*yf/ChLength)*cos(PI*(step+0.5)*dt/PhaseFieldAC::T);
+	//--------------------------------shear flow------------------------------
+	// if(step == PhaseFieldAC::T)
+	// {
+	// 	face.MsQh().U = 
+	// 	-U0*PI*sin(PI*face.xf/ChLength)*cos(PI*face.yf/ChLength);
+	// 	face.MsQh().V = 
+	// 	U0*PI*cos(PI*face.xf/ChLength)*sin(PI*face.yf/ChLength);
+	// }
 //
+	//!momentum
+	#ifdef _ARK_MOMENTUM_FLIP
 	face.MsQh().U    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_u)/(face.MsQh().Rho);
 	face.MsQh().V    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_v)/(face.MsQh().Rho);
 	#ifdef _ARK_FORCE_FLIP
@@ -223,6 +261,7 @@ void Update_MacroVar_h(Face_2D& face)
 	face.MsQh().calcMu();
 	face.f.tauh = face.MsQh().calcTau();
 	face.Factor();
+	#endif
 // //
 	// face.MsQh().U    = IntegralGH(face.f.BhDt[0],xi_u)/(face.MsQh().Rho*RT);
 	// face.MsQh().V    = IntegralGH(face.f.BhDt[0],xi_v)/(face.MsQh().Rho*RT);
@@ -429,6 +468,8 @@ void Update_DVDF_Source_h(Face_2D &face)
 void IntegralShearStress(){}
 //
 //-----------------------------Inc unsteady Taylor Green vortex------------------
+//!momentum
+#ifdef _ARK_MOMENTUM_FLIP
 extern void TaylorGreenVortex(double t,double x,double y,double &u, double &v, double &p);
 void unsteadyTaylorGreen()
 {	
@@ -475,6 +516,7 @@ void unsteadyTaylorGreen()
 		FaceArray[n].Factor();
 	}
 }
+#endif
 /*void DiffusiveScatter(Face_2D &face)
 {
 	double uu = face.uh*face.uh + face.vh*face.vh;

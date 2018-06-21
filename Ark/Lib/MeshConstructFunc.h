@@ -20,7 +20,7 @@ using std::endl;
 
 const int MeshPerLine = 5,NumPerCell = ARK::cellN;
 
-const double digits_ = 1e10;
+const double digits_ = ARK::digits;
 
 void ConstructCells(int* const &ptrHexLine,const int &count);
 
@@ -276,6 +276,7 @@ void ConstructFacesCells(const int &FC,const int (&N_C)[MeshPerLine],const int &
 int MeshArea()
 {
 	double dL_Min = 1.0;
+	printSplitLine();
 	cout << "Traversing Faces : " << endl;
 	for(int i = 0;i < Faces;++i)
 	{
@@ -309,6 +310,8 @@ int MeshArea()
 		getchar();
 	}
 	cout << "SetArea Done, SetNormalV Done" <<endl;
+	printSplitLine(nl);
+	printSplitLine();
 	cout << "Traversing Cells : " << endl;
 	for(int i = 0;i != Cells;++i)
 	{
@@ -321,6 +324,7 @@ int MeshArea()
 		#endif
 	}
 	cout << "SetVolume Done" <<endl;
+	printSplitLine(nl);
 	return 0;
 }
 void PeriodFaces(const int &F0,const int &F1)

@@ -6,7 +6,7 @@
 //------------------------------Normalized Parameters----------------------------
 const double 
 
-CFL = 0.5,
+CFL = 0.25,
 
 dt = CFL > 0.0 ? CFL*MinL/MaxU: 1.0E-4,
 
@@ -67,45 +67,43 @@ namespace PhaseFieldAC
 {
 	const double
 	
-	M_Phi = 0.1,
+	M_Phi = 0.005,
 	
-	Cn = 5/ChLength,
+	Cn = 4/ChLength,
 	
 	Pe = U0*ChLength/M_Phi,
 	
-	W_InterFace = ChLength*Cn,
+	wI = ChLength*Cn,
 
 	Sigma = 1E-3,
 
-	Beta = 12.0*Sigma/W_InterFace,
+	Beta = 12.0*Sigma/wI,
 
-	Kappa = 3.0*Sigma*W_InterFace/2;
+	Kappa = 3.0*Sigma*wI/2;
 
 	const double 
-
+	
 	PhiL = 1.0,	PhiV = 0.0,
 	
-	RhoL = 1.0,RhoV = 1.0,
+	RhoL = 10.0,RhoV = 1.0,
 
-	NuL  = Nu0, NuV  = Nu0/10,
+	MuL = Nu0*RhoL,	MuV = Nu0*RhoV,
 
-	MuL = NuL*RhoL,	MuV = NuV*RhoV,
+	NuL  = Nu0, NuV  = Nu0,
 	
 	aPhi = (RhoL-RhoV)/(PhiL-PhiV), bPhi = RhoV-aPhi*PhiV,
 
 	Uc = 1E-4,
 
-	Gx = 4.0*Uc*(MuL+MuV)/(Ly*Ly),
-
-	Gy = 0.0,
+	Gx = 0.0, Gy = 0.0,//4.0*Uc*(MuL+MuV)/(Ly*Ly)
 	
 	TauMass = M_Phi/RT,
 
-	centerX = ChLength/2,
+	centerX = 0.5*ChLength,
 
-	centerY = ChLength/2,
+	centerY = 0.5*ChLength,
 	
-	radius = 0.2*ChLength,
+	radius = 0.4*ChLength,
 
 	diameter = 2*radius;
 
@@ -115,9 +113,29 @@ namespace PhaseFieldAC
 
 	Eo = Gx*(RhoL-RhoV)*4*radius*radius/Sigma,
 
-	ReMP = sqrt(Gx*RhoL*(RhoL-RhoV)*diameter)*diameter/MuL; 
+	ReMP = sqrt(Gx*RhoL*(RhoL-RhoV)*diameter)*diameter/MuL,
+
+	T = 2*ChLength/U0;
+
+	int const 
+
+	iT = T/dt;
 }
 
+namespace PseudoPotentialSC
+{
+	double const
+
+	RhoL = 2.4806E-1, RhoV = 4.5435E-2;
+
+	double const 
+
+	K = 1,
+
+	Tr = 0.85,
+
+	radius = 0.25*ChLength;
+}
 /*const int
 
 I_TimeEnd = log(2.0)/(8.0*PI*PI*nu*dt);//TimeEnd/dt;
@@ -141,19 +159,19 @@ const int
 
 VelocityZone = 7,//7 == TC
 
-End_Step = 10000000,//log(2.0)/(8.0*PI*PI*Nu0*dt),
+End_Step = PhaseFieldAC::iT + 100,//log(2.0)/(8.0*PI*PI*Nu0*dt),
 
 ZeroDebugControl = 100, //
 
-ConvergenceControl = 1000, //SumRho,SumT
+ConvergenceControl = 100, //SumRho,SumT,independent
 
-ResidualControl = 1000, //print to screen
+ResidualControl = 10, //print to screen
 
-writeFileControl = 20000;
+writeFileControl = 100; //always >= ResidualControl
 
 double const
 
-RESIDUAL = 1.0E-6;
+RESIDUAL = 1E-12;
 
 //used for Cartesian Mesh;
 

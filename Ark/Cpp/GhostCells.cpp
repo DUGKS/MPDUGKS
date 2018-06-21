@@ -211,56 +211,6 @@ void ShadowCBoundConstruct(int BoundFaceNum,Face_2D** &ptrFaceA,Cell_2D* &ptrSha
 		lrtbConstruct(ptrFaceA[i]);
 	}
 }
-void MacroError(char const *macro,char const *boundaryName)
-{
-	_PRINT_SPLITLINE_ARK
-	cout <<macro<<"is undefined while "<<boundaryName<<"boundary exits"<<endl;
-	_PRINT_ERROR_MSG_FLIP
-	exit(-1);
-}
-// void ShadowCellMacroCheck()
-// {
-// 	if(0 != PeriodicFaceNum)
-// 	{
-// 		if(12 != _PERIODIC_12_8_BCs_FLIP)
-// 		{
-// 			MacroError("_PERIODIC_12_8_BCs_FLIP","Periodic");
-// 		}
-// 	}
-// 	if(0 != WallFaceNum)
-// 	{
-// 		if(3 != _Wall_3_BCs_FLIP)
-// 		{
-// 			MacroError("_Wall_3_BCs_FLIP","Wall");
-// 		}
-// 	}
-// 	if(0 != P_InletFaceNum)
-// 	{
-// 		if(4 != _P_INLET_4_BCS_FLIP)
-// 		{
-// 			MacroError("_P_INLET_4_BCS_FLIP","Pressure Inlet");
-// 		}
-// 	}
-// 	if(0 != P_OutletFaceNum)
-// 	{
-// 		if(4 != _P_OUTLET_4_BCS_FLIP)
-// 		{
-// 			MacroError("_P_OUTLET_4_BCS_FLIP","Pressure Outlet");
-// 		}
-// 	}
-// 	if(0 != SymmetryFaceNum)
-// 	{
-
-// 	}
-// 	if(0 != P_FarfieldFaceNum)
-// 	{
-
-// 	}
-// 	if(0 != V_InletFaceNum)
-// 	{
-
-// 	}
-// }
 int ShadowCellConstruct()
 {
 	//ShadowCellMacroCheck();

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <omp.h>
+#include <chrono>
 #include "DUGKSDeclaration.h"
 using std::ios;
 using std::setiosflags;
@@ -31,6 +32,8 @@ extern void Output_Residual(double t,double Residual);
 
 extern void Output_MidX(int step);
 
+extern void Output_MidY(int step);
+
 //------------------------Boundary.cpp----------------------
 
 extern void P_Inlet_4_Boundary();
@@ -54,6 +57,10 @@ extern void Update_force(Cell_2D &cell);
 extern void Update_force_h(Face_2D &face);
 
 extern void MacroSource(Cell_2D *cellptr);
+
+extern void Update_PseudoForce(Cell_2D &cell);
+
+extern void Update_PseudoForce(Face_2D &face);
 
 extern void Output_xcyc();
 
@@ -99,6 +106,9 @@ extern void Grad_VS_6points(Cell_2D *center);
 
 extern void Grad_VS_4points(Cell_2D *center);
 //------------------------------------------------------------------------------
+void Forecast_DVDF_Tilde(Cell_2D &cell);
+
+void StrangSplitting_Source(Cell_2D &cell);
 
 void Update_phi_BP(Cell_2D& cell);
 
@@ -131,21 +141,36 @@ extern void Update_DVDF_Source_h(Face_2D &face);
 extern void IntegralShearStress();
 
 //-------------------------------------------------------------------
- 
+auto startLoop = std::chrono::system_clock::now();
+auto endLoop = std::chrono::system_clock::now();
 void DUGKS2DSolver()
 {
-
-Output_Flowfield(0.0,0);
-//Output_xcyc();
-cout << "iteration start    ThreadNum : "<<ThreadNum<<endl;
-omp_set_num_threads(ThreadNum);
-step = 0;
+	Output_Flowfield(0.0,0);
+	//
+	printSplitLine();
+	cout << "iteration start    ThreadNum : "<<ThreadNum<<endl;
+	printSplitLine(nl);
+	//
+	omp_set_num_threads(ThreadNum);
+	step = 0;
 #pragma omp parallel
 {
-//while(step < End_Step)
-while(ResidualPer1k > RESIDUAL)
+//!------------------------loop selection---------------------------
+#ifdef _ARK_ENDTIME_FLIP
+	while(step < End_Step)
+#else
+	while(ResidualPer1k > RESIDUAL)
+#endif
 {
 //---------------------------------------------------------
+	#ifdef _ARK_STRANGSPLIT_FLIP
+	#pragma omp for schedule(guided)
+	LoopPS(Cells)
+	{
+		StrangSplitting_Source(CellArray[n]);
+	}
+	#endif
+	//
 	#pragma omp for schedule(guided)
 	LoopPS(Cells)
 	{
@@ -172,10 +197,10 @@ while(ResidualPer1k > RESIDUAL)
 	#pragma omp for schedule(guided)
 	LoopPS(Cells)
 	{
-	//Grad_VS_LS(&CellArray[n]);
-	Grad_VS_6points(&CellArray[n]);
-	//Grad_VS_4points(&CellArray[n]);
-	//Zero_PartialDerivatives(CellArray[n]);
+		//Grad_VS_LS(&CellArray[n]);
+		Grad_VS_6points(&CellArray[n]);
+		//Grad_VS_4points(&CellArray[n]);
+		//Zero_PartialDerivatives(CellArray[n]);
 	}
 	#endif
 //-------------------------------Flux-------------------------------------
@@ -246,10 +271,10 @@ while(ResidualPer1k > RESIDUAL)
 		Update_phiFlux_h(FaceArray[n]);
 	}
 	#pragma omp for schedule(guided)
-		for(int n = 0;n < WallFaceNum;++n)
-		{
-			fluxCheck(WallFaceA[n]);
-		}
+	for(int n = 0;n < WallFaceNum;++n)
+	{
+		fluxCheck(WallFaceA[n]);
+	}
 //--------------------auxilary DDF : phi tilde----------------------------
 	#pragma omp for schedule(guided)
 	LoopPS(Cells)
@@ -260,7 +285,6 @@ while(ResidualPer1k > RESIDUAL)
 	{
 		Update_MacroVar(CellArray[n]);
 	}
-//-------------------------pseudopotential force-------------------------
 	#ifdef _ARK_ALLENCAHN_FLIP
 	#pragma omp for schedule(guided)
 	LoopPS(Cells)
@@ -268,7 +292,23 @@ while(ResidualPer1k > RESIDUAL)
 		MacroSource(&CellArray[n]);
 	}
 	#endif
-//
+//!-------------------------pseudopotential force-------------------------
+	#ifdef _ARK_PSEUDOPSI_FLIP
+	#pragma omp for schedule(guided)
+	LoopPS(Cells)
+	{
+		Update_PseudoForce(CellArray[n]);
+	}
+	#endif
+	//
+	#ifdef _ARK_STRANGSPLIT_FLIP
+	#pragma omp for schedule(guided)
+	LoopPS(Cells)
+	{
+		StrangSplitting_Source(CellArray[n]);
+	}
+	#endif
+	//
 	#pragma omp single
 	{
 		++step;
@@ -284,11 +324,16 @@ while(ResidualPer1k > RESIDUAL)
 			Update_Residual(step);
 		}
 	}
-}
+  }
 }
 	IntegralShearStress();
 	Output_Flowfield((step)*dt,step);
 	Output_MidX(step);
+	Output_MidY(step);
+//
+	printSplitLine();
+	cout <<"iteration End"<<nl;
+	printSplitLine(nl);
 }
 
 void Zero_PartialDerivatives(Cell_2D &cell)
@@ -296,14 +341,35 @@ void Zero_PartialDerivatives(Cell_2D &cell)
 	for(int i = 0;i < DV_Qu;++i)
 	for(int j = 0;j < DV_Qv;++j)
 	{
+		#ifdef _ARK_MOMENTUM_FLIP
 		cell.f.BarP_x[i][j] = 0.0;
 		cell.f.BarP_y[i][j] = 0.0;
+		#endif
 //isothermal flip
-#ifndef _ARK_ISOTHERMAL_FLIP
+		#ifndef _ARK_ISOTHERMAL_FLIP
 		cell.g.BarP_x[i][j] = 0.0;
 		cell.g.BarP_y[i][j] = 0.0;
-#endif
+		#endif
 	}
+}
+void Forecast_DVDF_Tilde(Cell_2D &cell)
+{
+	LoopVS(DV_Qu,DV_Qv)
+	{
+		#ifdef _ARK_MOMENTUM_FLIP
+		cell.f.Tilde[i][j] += ::hDt*cell.f.So[i][j];
+		#endif
+	}
+}
+void StrangSplitting_Source(Cell_2D &cell)
+{
+	Update_phi_Eq(cell);
+	Update_DVDF_Source(cell);
+	Forecast_DVDF_Tilde(cell);
+	#ifdef _ARK_MOMENTUM_FLIP
+	cell.MsQ().U += ::hDt*cell.MsQ().Fx/cell.MsQ().Rho;
+	cell.MsQ().V += ::hDt*cell.MsQ().Fy/cell.MsQ().Rho;
+	#endif
 }
 void Update_phi_BP(Cell_2D& cell)
 {
@@ -315,12 +381,14 @@ void Update_phi_BP(Cell_2D& cell)
 		cell.h.BarP[i][j] = cell.h.aBP*cell.h.Tilde[i][j] + cell.h.bBP*cell.h.Eq[i][j]
 						  + cell.h.cBP*cell.h.So[i][j];
 		#endif
-
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		cell.f.BarP[i][j] = cell.f.aBP*cell.f.Tilde[i][j] + cell.f.bBP*cell.f.Eq[i][j];
 		#ifdef _ARK_FORCE_FLIP
 		cell.f.BarP[i][j] += cell.f.cBP*cell.f.So[i][j];
 		#endif
-//isothermal flip
+		#endif
+		//isothermal flip
 		#ifndef _ARK_ISOTHERMAL_FLIP
 		cell.g.BarP[i][j] = cell.g.aBP*cell.g.Tilde[i][j] + cell.g.bBP*cell.g.Eq[i][j];
 		#endif
@@ -336,9 +404,11 @@ void Update_phi_h(Face_2D& face)
 						 + face.h.ch*face.h.SohDt[i][j];
 		#endif
 
+		#ifdef _ARK_MOMENTUM_FLIP
 		face.f.hDt[i][j] = face.f.ah*face.f.BhDt[i][j] + face.f.bh*face.f.EqhDt[i][j];
 		#ifdef _ARK_FORCE_FLIP
 		face.f.hDt[i][j] += face.f.ch*face.f.SohDt[i][j];
+		#endif
 		#endif
 		//isothermal flip
 		#ifndef _ARK_ISOTHERMAL_FLIP
@@ -354,8 +424,10 @@ void Update_phiFlux_h(Face_2D &face)
 		#ifdef _ARK_ALLENCAHN_FLIP
 		face.h.hDt[i][j] *= face.xi_n_dS[i][j];
 		#endif
-		//
+		//momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		face.f.hDt[i][j] *= face.xi_n_dS[i][j];
+		#endif
 		//isothermal flip
 		#ifndef _ARK_ISOTHERMAL_FLIP
 		face.g.hDt[i][j] *= face.xi_n_dS[i][j];
@@ -369,9 +441,11 @@ double VenkatakrishnanExpression(double a,double b)
 } 
 void VenkatakrishnanFluxLimiter(Cell_2D &cell,int const &i,int const &j)
 {
+	#ifdef _ARK_MOMENTUM_FLIP
 	double GradfBPDotDelta[4],LfBP[4];
 	double MaxfBP = cell.f.BarP[i][j],MinfBP = cell.f.BarP[i][j];
 	double MinfBPLimiter = 1;
+	#endif
 //
 	// double MaxfBP = -1E+5,MinfBP = -MaxfBP, MaxgBP = -1E+5,MingBP = -MaxgBP;
 	#ifndef _ARK_ISOTHERMAL_FLIP
@@ -382,20 +456,25 @@ void VenkatakrishnanFluxLimiter(Cell_2D &cell,int const &i,int const &j)
 //	
 	for(int iFace = 0;iFace < cell.celltype;++iFace)
 	{
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		if(cell.Cell_C[iFace]->f.BarP[i][j] > MaxfBP)
 			MaxfBP = cell.Cell_C[iFace]->f.BarP[i][j];
 		if(cell.Cell_C[iFace]->f.BarP[i][j] < MinfBP)
 			MinfBP = cell.Cell_C[iFace]->f.BarP[i][j];
-//isothermal
-#ifndef _ARK_ISOTHERMAL_FLIP
+		#endif
+		//isothermal
+		#ifndef _ARK_ISOTHERMAL_FLIP
 		if(cell.Cell_C[iFace]->g.BarP[i][j] > MaxgBP)
 			MaxgBP = cell.Cell_C[iFace]->g.BarP[i][j];
 		if(cell.Cell_C[iFace]->g.BarP[i][j] < MingBP)
 			MingBP = cell.Cell_C[iFace]->g.BarP[i][j];
-#endif
+		#endif
 	}
 	for(int iFace = 0;iFace < cell.celltype;++iFace)
 	{
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		GradfBPDotDelta[iFace] = (cell.Face_C[iFace]->xf - cell.xc)*cell.f.BarP_x[i][j]
 						        + (cell.Face_C[iFace]->yf - cell.yc)*cell.f.BarP_y[i][j];					        
 		if(GradfBPDotDelta[iFace] > 0)
@@ -412,8 +491,9 @@ void VenkatakrishnanFluxLimiter(Cell_2D &cell,int const &i,int const &j)
 		}
 		else
 			LfBP[iFace] = 1;
-//isothermal
-#ifndef _ARK_ISOTHERMAL_FLIP
+		#endif
+		//isothermal
+		#ifndef _ARK_ISOTHERMAL_FLIP
 		GradgBPDotDelta[iFace] = (cell.Face_C[iFace]->xf - cell.xc)*cell.g.BarP_x[i][j]
 						        + (cell.Face_C[iFace]->yf - cell.yc)*cell.g.BarP_y[i][j];
 		if(GradgBPDotDelta[iFace] > 0)
@@ -430,21 +510,27 @@ void VenkatakrishnanFluxLimiter(Cell_2D &cell,int const &i,int const &j)
 		}
 		else
 			LgBP[iFace] = 1;
-#endif
+		#endif
 	}
 	for(int iFace = 0;iFace < cell.celltype;++iFace)
 	{
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		if(LfBP[iFace] < MinfBPLimiter) MinfBPLimiter = LfBP[iFace];
-//isothermal
-#ifndef _ARK_ISOTHERMAL_FLIP
+		#endif
+		//isothermal
+		#ifndef _ARK_ISOTHERMAL_FLIP
 		if(LgBP[iFace] < MingBPLimiter) MingBPLimiter = LgBP[iFace];
-#endif
+		#endif
 	}
+	//!momentum
+	#ifdef _ARK_MOMENTUM_FLIP
 	cell.fBPLimiter = MinfBPLimiter;
-//isothermal
-#ifndef _ARK_ISOTHERMAL_FLIP
+	#endif
+	//isothermal
+	#ifndef _ARK_ISOTHERMAL_FLIP
 	cell.gBPLimiter = MingBPLimiter;
-#endif
+	#endif
 }
 void UW_Interior_phi_Bh_Limiter(Face_2D& face,Cell_2D* ptr_C,int const &i,int const &j)
 {
@@ -455,10 +541,12 @@ void UW_Interior_phi_Bh_Limiter(Face_2D& face,Cell_2D* ptr_C,int const &i,int co
 	face.h.BhDt[i][j] = ptr_C->h.BarP[i][j]
 					  + (dx*ptr_C->h.BarP_x[i][j] + dy*ptr_C->h.BarP_y[i][j]);
 	#endif
-	//
+	//!momentum
+	#ifdef _ARK_MOMENTUM_FLIP
 	face.f.BhDt[i][j] = ptr_C->f.BarP[i][j]
 					  + ptr_C->fBPLimiter*(dx*ptr_C->f.BarP_x[i][j] + dy*ptr_C->f.BarP_y[i][j]);
-//isothermal flip
+	#endif
+	//isothermal flip
 	#ifndef _ARK_ISOTHERMAL_FLIP
 	face.g.BhDt[i][j] = ptr_C->g.BarP[i][j]
 					  + ptr_C->gBPLimiter*(dx*ptr_C->g.BarP_x[i][j] + dy*ptr_C->g.BarP_y[i][j]);
@@ -473,9 +561,11 @@ void UW_Interior_phi_Bh(Face_2D& face,Cell_2D* ptr_C,int const &i,int const &j)
 	face.h.BhDt[i][j] = ptr_C->h.BarP[i][j]
 					  + (dx*ptr_C->h.BarP_x[i][j] + dy*ptr_C->h.BarP_y[i][j]);
 	#endif
-	//				  
+	//!momentum
+	#ifdef _ARK_MOMENTUM_FLIP				  
 	face.f.BhDt[i][j] = ptr_C->f.BarP[i][j]
 					  + (dx*ptr_C->f.BarP_x[i][j] + dy*ptr_C->f.BarP_y[i][j]);
+	#endif
 	//isothermal flip
 	#ifndef _ARK_ISOTHERMAL_FLIP
 	face.g.BhDt[i][j] = ptr_C->g.BarP[i][j]
@@ -484,11 +574,23 @@ void UW_Interior_phi_Bh(Face_2D& face,Cell_2D* ptr_C,int const &i,int const &j)
 }
 void UW_Interior_phi_Bh(Face_2D& face,int const &i,int const &j)
 {
+	Cell_2D const *ow = face.owner, *ne = face.neigh; 
+	double dxow = face.xf - hDt*(xi_u[QuIndex]) - ow->xc;
+	double dyow = face.yf - hDt*xi_v[j] - ow->yc;
+
+	double dxne = face.xf - hDt*(xi_u[QuIndex]) - ne->xc;
+	double dyne = face.yf - hDt*xi_v[j] - ne->yc;
 	#ifdef _ARK_ALLENCAHN_FLIP
-	face.h.BhDt[i][j] = 0.5*(face.owner->h.BarP[i][j]+face.neigh->h.BarP[i][j]);
+	// face.h.BhDt[i][j] = 0.5*(face.owner->h.BarP[i][j]+face.neigh->h.BarP[i][j]);
+	face.h.BhDt[i][j] = (ow->h.BarP[i][j] + (dxow*ow->h.BarP_x[i][j] + dyow*ow->h.BarP_y[i][j])
+	+ ne->h.BarP[i][j] + (dxne*ne->h.BarP_x[i][j] + dyne*ne->h.BarP_y[i][j]))/2;
 	#endif
-	//				  
-	face.f.BhDt[i][j] = 0.5*(face.owner->f.BarP[i][j]+face.neigh->f.BarP[i][j]);
+	//!momentum
+	#ifdef _ARK_MOMENTUM_FLIP			  
+	face.f.BhDt[i][j] = (ow->f.BarP[i][j] + (dxow*ow->f.BarP_x[i][j] + dyow*ow->f.BarP_y[i][j])
+	+ ne->f.BarP[i][j] + (dxne*ne->f.BarP_x[i][j] + dyne*ne->f.BarP_y[i][j]))/2;
+	// face.f.BhDt[i][j] = 0.5*(face.owner->f.BarP[i][j]+face.neigh->f.BarP[i][j]);
+	#endif
 	//isothermal flip
 	#ifndef _ARK_ISOTHERMAL_FLIP
 	face.g.BhDt[i][j] = 0.5*(face.owner->g.BarP[i][j]+face.neigh->g.BarP[i][j]);
@@ -499,7 +601,11 @@ void CD_Interior_phi_Bh(Face_2D &face,int i,int j)
 	#ifdef _ARK_ALLENCAHN_FLIP
 	double _hBP_xF = 1000,_hBP_yF = 1000;
 	#endif
+	//!momentum
+	#ifdef _ARK_MOMENTUM_FLIP
 	double _fBP_xF = 1000,_fBP_yF = 1000;
+	#endif
+	//!isothermal
 	#ifndef _ARK_ISOTHERMAL_FLIP
 	double _gBP_xF = 1000,_gBP_yF = 1000;
 	#endif
@@ -513,12 +619,14 @@ void CD_Interior_phi_Bh(Face_2D &face,int i,int j)
 			_hBP_yF = (face.owner->h.BarP[i][j] - face.neigh->h.BarP[i][j])/face._dy;
 			#endif
 			//
-			//_fBP_xF =  0.5*(face.owner->f.BarP_x[i][j] + face.neigh->f.BarP_x[i][j]);
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			_fBP_xF = (0.5*(face.faceCells[3]->f.BarP[i][j] - face.faceCells[1]->f.BarP[i][j])
 					+ 0.5*(face.faceCells[2]->f.BarP[i][j] - face.faceCells[0]->f.BarP[i][j]))
 					/face._dx;
 			_fBP_yF = (face.owner->f.BarP[i][j] - face.neigh->f.BarP[i][j])/face._dy;
-			//
+			#endif
+			//!isothemal
 			#ifndef _ARK_ISOTHERMAL_FLIP
 			//_gBP_xF =  0.5*(face.owner->g.BarP_x[i][j] + face.neigh->g.BarP_x[i][j]);
 			_gBP_xF = (0.5*(face.faceCells[3]->g.BarP[i][j] - face.faceCells[1]->g.BarP[i][j])
@@ -537,14 +645,15 @@ void CD_Interior_phi_Bh(Face_2D &face,int i,int j)
 			_hBP_xF = (face.owner->h.BarP[i][j] - face.neigh->h.BarP[i][j])/face._dx;
 			#endif
 			//
-			//_fBP_yF = 0.5*(face.owner->f.BarP_y[i][j] + face.neigh->f.BarP_y[i][j]);
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			_fBP_yF = (0.5*(face.faceCells[3]->f.BarP[i][j] - face.faceCells[1]->f.BarP[i][j])
 					+ 0.5*(face.faceCells[2]->f.BarP[i][j] - face.faceCells[0]->f.BarP[i][j]))
 					/face._dy;
 			_fBP_xF = (face.owner->f.BarP[i][j] - face.neigh->f.BarP[i][j])/face._dx;
+			#endif
 			//
 			#ifndef _ARK_ISOTHERMAL_FLIP
-			//_gBP_yF = 0.5*(face.owner->g.BarP_y[i][j] + face.neigh->g.BarP_y[i][j]);
 			_gBP_yF = (0.5*(face.faceCells[3]->g.BarP[i][j] - face.faceCells[1]->g.BarP[i][j])
 					+ 0.5*(face.faceCells[2]->g.BarP[i][j] - face.faceCells[0]->g.BarP[i][j]))
 					/face._dy;
@@ -560,10 +669,12 @@ void CD_Interior_phi_Bh(Face_2D &face,int i,int j)
 		face.h.BhDt[i][j] = 0.5*(face.owner->h.BarP[i][j] + face.neigh->h.BarP[i][j])
 				- hDt*(_hBP_xF*(xi_u[QuIndex]) + _hBP_yF*xi_v[j]);
 		#endif
-		//
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		face.f.BhDt[i][j] = 0.5*(face.owner->f.BarP[i][j] + face.neigh->f.BarP[i][j])
 				- hDt*(_fBP_xF*(xi_u[QuIndex]) + _fBP_yF*xi_v[j]);
-		//
+		#endif
+		//!isothemal
 		#ifndef _ARK_ISOTHERMAL_FLIP
 		face.g.BhDt[i][j] = 0.5*(face.owner->g.BarP[i][j] + face.neigh->g.BarP[i][j])
 				- hDt*(_gBP_xF*(xi_u[QuIndex]) + _gBP_yF*xi_v[j]);
@@ -618,6 +729,9 @@ void Flux_2D(Face_2D &face)
 {	
 	Update_phi_fBh(face);
 	Update_MacroVar_h(face);
+	#if defined _ARK_PSEUDOPSI_FLIP && defined _ARK_FORCE_FLIP
+	Update_PseudoForce(face);
+	#endif
 	Update_phi_Eqh(face);
 	#ifdef _ARK_FORCE_FLIP
 	Update_DVDF_Source_h(face);
@@ -635,8 +749,11 @@ void Update_phi_T(Cell_2D &cell)
 		#ifdef _ARK_ALLENCAHN_FLIP
 		double hFluxSum = 0.0;
 		#endif
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		double fFluxSum = 0;
-//isothermal flip
+		#endif
+		//isothermal flip
 		#ifndef _ARK_ISOTHERMAL_FLIP
 		gFluxSum = 0;
 		#endif
@@ -645,9 +762,11 @@ void Update_phi_T(Cell_2D &cell)
 			#ifdef _ARK_ALLENCAHN_FLIP
 			hFluxSum += cell.signFlux[k]*cell.Face_C[k]->h.hDt[i][j];
 			#endif
-			//
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
 			fFluxSum += cell.signFlux[k]*cell.Face_C[k]->f.hDt[i][j];
-//isothermal flip
+			#endif
+			//isothermal flip
 			#ifndef _ARK_ISOTHERMAL_FLIP
 			gFluxSum += cell.signFlux[k]*cell.Face_C[k]->g.hDt[i][j];
 			#endif
@@ -656,9 +775,11 @@ void Update_phi_T(Cell_2D &cell)
 		cell.h.Tilde[i][j] = aTP*cell.h.BarP[i][j] - bTP*cell.h.Tilde[i][j]
 							+ cell.DtSlashVolume*hFluxSum;
 		#endif
-		//
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
 		cell.f.Tilde[i][j] = aTP*cell.f.BarP[i][j] - bTP*cell.f.Tilde[i][j]
 							+ cell.DtSlashVolume*fFluxSum;
+		#endif
 //isothermal flip
 		#ifndef _ARK_ISOTHERMAL_FLIP
 		cell.g.Tilde[i][j] = aTP*cell.g.BarP[i][j] - bTP*cell.g.Tilde[i][j]
@@ -682,40 +803,60 @@ void Update_SumRho(int step)
 void Update_Residual(int step)
 {
 //---------------------------density residual-------------------------
-		// double SumRho = 0.0,SumdRho = 0.0;
-		// double dRho = 0.0;
-		// LoopPS(Cells)
-		// {
-		// 	dRho = CellArray[n].MsQ().Rho - CellArray[n].MsQ().Rho_1k;
-		// 	SumdRho += dRho*dRho;
-		// 	SumRho += CellArray[n].MsQ().Rho*CellArray[n].MsQ().Rho;
-		// 	CellArray[n].MsQ().Rho_1k = CellArray[n].MsQ().Rho;
-		// }
-		// ResidualPer1k = sqrt(SumdRho/(SumRho + 1.0E-30));
-//
+#ifndef _ARK_ENDTIME_FLIP
+	#ifndef _ARK_MOMENTUM_FLIP
+	double SumRho = 0.0,SumdRho = 0.0;
+	double dRho = 0.0;
+	LoopPS(Cells)
+	{
+		dRho = CellArray[n].MsQ().Rho - CellArray[n].MsQ().Rho_1k;
+		SumdRho += dRho*dRho;
+		SumRho += CellArray[n].MsQ().Rho*CellArray[n].MsQ().Rho;
+		CellArray[n].MsQ().Rho_1k = CellArray[n].MsQ().Rho;
+	}
+	ResidualPer1k = sqrt(SumdRho/(SumRho + 1.0E-30));
 //---------------------------velocity residual--------------------------
-		double SumUV = 0.0,Sumdudv = 0.0;
-		double du = 0.0, dv = 0.0;
-		for(int i = 0;i < Cells;++i)
-		{
-			du = CellArray[i].MsQ().U - CellArray[i].MsQ().U_1k;
-			dv = CellArray[i].MsQ().V - CellArray[i].MsQ().V_1k;
-			Sumdudv += du*du + dv*dv;
-			SumUV += CellArray[i].MsQ().SqUV();
-			CellArray[i].MsQ().U_1k = CellArray[i].MsQ().U;
-			CellArray[i].MsQ().V_1k = CellArray[i].MsQ().V;
-		}
-		ResidualPer1k = sqrt(Sumdudv/(SumUV + 1.0E-30));
-		Output_Residual(step*dt,ResidualPer1k);
-		if(step%writeFileControl == 0)
-		{
-			Output_Flowfield(step*dt, step);
-			Output_MidX(step);
-		}
-		//Output_xcyc();
+	#else
+	double SumUV = 0.0,Sumdudv = 0.0;
+	double du = 0.0, dv = 0.0;
+	for(int i = 0;i < Cells;++i)
+	{
+		du = CellArray[i].MsQ().U - CellArray[i].MsQ().U_1k;
+		dv = CellArray[i].MsQ().V - CellArray[i].MsQ().V_1k;
+		Sumdudv += du*du + dv*dv;
+		SumUV += CellArray[i].MsQ().SqUV();
+		CellArray[i].MsQ().U_1k = CellArray[i].MsQ().U;
+		CellArray[i].MsQ().V_1k = CellArray[i].MsQ().V;
+	}
+	ResidualPer1k = sqrt(Sumdudv/(SumUV + 1.0E-30));
+	#endif
+	Output_Residual(step*dt,ResidualPer1k);
+#endif
+
+	// if(step%writeFileControl == 0)
+	// {
+	// 	Output_Flowfield(step*dt, step);
+	// 	//Output_MidX(step);
+	// }
+	if
+	(
+		PhaseFieldAC::iT == step 
+	||  PhaseFieldAC::iT/4 == step
+	||  PhaseFieldAC::iT/2 == step
+	||  3*PhaseFieldAC::iT/4 == step
+	)
+	{
+		Output_Flowfield(step*dt, step);
+		//Output_MidX(step);
+	}
+	//!suppress print to screen on server;
 	#ifndef _ARK_NOHUP_FLIP
-		cout << setiosflags(ios::scientific) << setprecision(12);
-		cout <<step <<"    "<<step*dt<<"    "<<SumRho<<"    "<<SumT<<"    "<<ResidualPer1k<<'\n';
+	endLoop = std::chrono::system_clock::now();
+	cout << setiosflags(ios::scientific) << setprecision(12);
+	cout <<step <<"    "<<step*dt<<"    "<<SumRho<<"    "<<SumT<<"    "<<ResidualPer1k<<fs
+	<<std::chrono::duration_cast<std::chrono::milliseconds>(endLoop-startLoop).count()
+	<<'\n';
+	startLoop = std::chrono::system_clock::now();
 	#endif
 }
 void UpdateL2Error(int step)

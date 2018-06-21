@@ -6,6 +6,8 @@ using namespace PhaseFieldAC;
 #include <iostream>
 using std::cout;
 
+extern const char DmQnName[] = "D2Q9Fak"; 
+
 extern double * const xi_u = new double[DV_Qv];
 
 extern double * const xi_v = new double[DV_Qv];
