@@ -17,6 +17,8 @@ using std::setprecision;
 
 extern char const DmQnName[];
 
+extern string caseName;
+
 int const Out_precision = 12;
 
 int const IC = 198, JC = 197;
@@ -70,7 +72,8 @@ void OutputCase()
 		getchar();
 		return;
 	}
-	OutFile_Case <<_MESHFILE_NAME_ARK<<"    =    Mesh File"<<endl
+	OutFile_Case <<caseName<<"    =    Case Name"<<endl
+				 <<_MESHFILE_NAME_ARK<<"    =    Mesh File"<<endl
 				 <<_MESHTYPE_ARK<<"    =    Mesh Type"<<endl
 				 <<_FLUX_SCHEME_ARK<<"    =    Flux Scheme"<<endl
 				 <<_BC_ARK<<"    =    Boundary Condition"<<endl
@@ -81,17 +84,17 @@ void OutputCase()
 				 <<right<<fs<<"="<<fs<<"right"<<endl
 				 <<top<<fs<<"="<<fs<<"top"<<endl
 				 <<bottom<<fs<<"="<<fs<<"bottom"<<endl
-				 <<"#----------------------------------------"<<endl
+				 <<"#--------------thermodynamics------------"<<endl
 				 <<Omega0<<"    =    Omega0//sutherland power"<<endl
 				 <<Pr<<"    =    Prandtl"<<endl
 				 <<nK<<"    =    nK//internal degrees of freedom"<<endl
 				 <<Cv<<"    =    specific heat of constant volume"<<endl
 				 <<Gamma<<"    =    Gamma//specific heat ratio"<<endl
-				 <<"#----------------------------------------"<<endl
+				 <<"#----------------Reference----------------"<<endl
 				 <<DV_Qu<<"    =    Qu"<<endl
 				 <<DV_Qv<<"    =    Qv"<<endl
 				 <<NL<<"    =    NL"<<endl
-				 <<ChLength<<"    =    Character Length"<<endl
+				 <<ChLength<<"    =    Characteristic Length"<<endl
 				 <<MinL<<"    =    MinL"<<endl
 				 <<Kn<<"    =    Knudsen"<<endl
 				 <<Ma<<"    =    Mach"<<endl
@@ -341,197 +344,250 @@ void Output_MidY(int step)
 		OutFile_MidY<<cell.xc<<fs<<cell.MsQ().Rho<<fs<<cell.MsQ().V<<fs<<u_A<<endl;
 	}
 }
+void writeHead(ofstream &OutFile,int const subZone)
+{
+	OutFile<<"(300 ("<<subZone<<" 2 1 0 0 1 "<<Cells<<")("<<endl;
+}
+void writeHead(ofstream &OutFile,int const subZone,int const nD)
+{
+	OutFile<<"(300 ("<<subZone<<" 2 "<<nD<<" 0 0 1 "<<Cells<<")("<<endl;
+}
 void Output_Flowfield(double const &t,int step)
 {
-	ostringstream oss_FlowField;
-	oss_FlowField <<"../FlowField/global/" << "step" << step <<"Ma"<< Ma<<"_"
-					<<_MESHTYPE_ARK<<NL<<"_CFL"<<CFL<<"_T"<<t<<".dat";
-	ofstream OutFile_FlowField(oss_FlowField.str().c_str());
-	if(!OutFile_FlowField)
-	{
-		_PRINT_ERROR_MSG_FLIP
-		cout <<"  "<<"OutFile_FlowField open failed" << endl; 
-		getchar();
-		return;
-	}
-/*	q<sub>x</sub>,q<sub>y</sub>,\
-	<Greek>t</Greek><sub>xx</sub>,<Greek>t</Greek><sub>xy</sub>,<Greek>t</Greek><sub>yy</sub>,
-*/
-	ostringstream VarName,VarLocation,ZoneName,dataNE;
-	VarName << "VARIABLES = X,Y,<Greek>r</Greek>,U,V,p,T,\
-	<Greek>f</Greek>,\
-	<Greek>f</Greek><sub>x</sub>,<Greek>f</Greek><sub>y</sub>,\
-	Fx,Fy\n";
-	VarLocation <<"VarLocation=([1-2]=NODAL,[3-12]=CellCentered)\n";
-	ZoneName<<"ZONE T = Time" << t <<"_"<<"Mu"<<Mu0<<"\n";
-	dataNE<<"Nodes="<<Nodes<<", Elements="<<Cells<<", ZONETYPE=FEQuadrilateral\n";
-	string tecformat[5]={VarName.str().c_str(),
-						ZoneName.str().c_str(),
-						dataNE.str().c_str(),
-						"DATAPACKING=BLOCK\n",
-						VarLocation.str().c_str()};
-	OutFile_FlowField << tecformat[0]<<tecformat[1]<<tecformat[2]<<tecformat[3]<<tecformat[4];
-	OutFile_FlowField << setiosflags(ios::scientific) << setprecision(12);
-//	
-	/*double *u_A = new double[Cells];
-	double *v_A = new double[Cells];
-	double *p_A = new double[Cells];
-	for(int i = 0;i != Cells;++i)
-		TaylorGreenVortex(t,CellArray[i].xc,CellArray[i].yc,u_A[i], v_A[i], p_A[i]);
-	*/
-//---------------------------------------------Node->X-------------------------------------------
-	for(int i = 0;i != Nodes;++i)
-	{
-		OutFile_FlowField << NodeArray[i].xN <<"   ";
-		if((i+1)%16 == 0)
-			OutFile_FlowField << "\n";
-	}
-	OutFile_FlowField << endl;
-//--------------------------------------------Node->Y-------------------------------------------
-	for(int i = 0;i != Nodes;++i)
-	{
-		OutFile_FlowField << NodeArray[i].yN <<"   ";
-		if((i+1)%16 == 0)
-			OutFile_FlowField << "\n";
-	}
-	OutFile_FlowField << endl;
-//--------------------------------------------rho-------------------------------------------
-	for(int i = 0;i != Cells;++i)
-	{
-		OutFile_FlowField << CellArray[i].MsQ().Rho <<"   ";
-		if((i+1)%16 == 0)
-			OutFile_FlowField << "\n";
-	}
-//--------------------------------------------u-------------------------------------------
-	for(int i = 0;i != Cells;++i)
-	{
-		OutFile_FlowField << CellArray[i].MsQ().U <<"   ";
-		if((i+1)%16 == 0)
-			OutFile_FlowField << "\n";
-	}
-//--------------------------------------------v-------------------------------------------
-	for(int i = 0;i != Cells;++i)
-	{
-		OutFile_FlowField << CellArray[i].MsQ().V <<"   ";
-		if((i+1)%16 == 0)
-			OutFile_FlowField << "\n";
-	}
-//--------------------------------------------p-------------------------------------------
-	for(int i = 0;i != Cells;++i)
-	{
-		OutFile_FlowField << CellArray[i].MsQ().p <<"   ";
-		if((i+1)%16 == 0)
-			OutFile_FlowField << "\n";
-	}
-//--------------------------------------------T-------------------------------------------
-	for(int i = 0;i != Cells;++i)
-	{
-		OutFile_FlowField << CellArray[i].MsQ().T <<"   ";
-		if((i+1)%16 == 0)
-			OutFile_FlowField << "\n";
-	}
-/*
-	for(int i = 0;i != Cells;++i)
-	{
-		OutFile_FlowField << CellArray[i].MsQ().qx <<"   ";
-		if((i+1)%16 == 0)
-			OutFile_FlowField << "\n";
-	}
-	for(int i = 0;i != Cells;++i)
-	{
-		OutFile_FlowField << CellArray[i].MsQ().qy <<"   ";
-		if((i+1)%16 == 0)
-			OutFile_FlowField << "\n";
-	}
-	for(int i = 0;i != Cells;++i)
-	{
-		OutFile_FlowField << CellArray[i].shearTau[0][0] <<"   ";
-		if((i+1)%16 == 0)
-			OutFile_FlowField << "\n";
-	}
-	for(int i = 0;i != Cells;++i)
-	{
-		OutFile_FlowField << CellArray[i].shearTau[0][1] <<"   ";
-		if((i+1)%16 == 0)
-			OutFile_FlowField << "\n";
-	}
-	for(int i = 0;i != Cells;++i)
-	{
-		OutFile_FlowField << CellArray[i].shearTau[1][1] <<"   ";
-		if((i+1)%16 == 0)
-			OutFile_FlowField << "\n";
-	}
-*/
-	// for(int i = 0;i != Cells;++i)
-	// {
-	// 	OutFile_FlowField << (*CellArray[i].pseudopsi) <<"   ";
-	// 	if((i+1)%16 == 0)
-	// 		OutFile_FlowField << "\n";
-	// }
-	for(int i = 0;i != Cells;++i)
-	{
-		OutFile_FlowField << CellArray[i].MsQ().Phi <<"   ";
-		if((i+1)%16 == 0)
-			OutFile_FlowField << "\n";
-	}
-	for(int i = 0;i != Cells;++i)
-	{
-		OutFile_FlowField << CellArray[i].MsQ().Phi_x <<"   ";
-		if((i+1)%16 == 0)
-			OutFile_FlowField << "\n";
-	}
-	for(int i = 0;i != Cells;++i)
-	{
-		OutFile_FlowField << CellArray[i].MsQ().Phi_y <<"   ";
-		if((i+1)%16 == 0)
-			OutFile_FlowField << "\n";
-	}
-	for(int i = 0;i != Cells;++i)
-	{
-		OutFile_FlowField << CellArray[i].MsQ().Fx <<"   ";
-		if((i+1)%16 == 0)
-			OutFile_FlowField << "\n";
-	}
-	for(int i = 0;i != Cells;++i)
-	{
-		OutFile_FlowField << CellArray[i].MsQ().Fy <<"   ";
-		if((i+1)%16 == 0)
-			OutFile_FlowField << "\n";
-	}
-/*//--------------------------------------------u_A-------------------------------------------
-	for(int i = 0;i != Cells;++i)
-	{
-		OutFile_FlowField << u_A[i] <<"   ";
-		if((i+1)%16 == 0)
-			OutFile_FlowField << "\n";
-	}
-//--------------------------------------------v_A-------------------------------------------
-	for(int i = 0;i != Cells;++i)
-	{
-		OutFile_FlowField << v_A[i] <<"   ";
-		if((i+1)%16 == 0)
-			OutFile_FlowField << "\n";
-	}
-//--------------------------------------------p_A-------------------------------------------
-	for(int i = 0;i != Cells;++i)
-	{
-		OutFile_FlowField << p_A[i] <<"   ";
-		if((i+1)%16 == 0)
-			OutFile_FlowField << "\n";
-	}*/
-//--------------------------------------------relation----------------------------------------	
-	for(int i = 0;i != Cells;++i)
-	{
-		OutFile_FlowField << MeshIndex(CellArray[i].cellNodes[0] , NodeArray)<< " "
-						  << MeshIndex(CellArray[i].cellNodes[1] , NodeArray)<< " "
-					 	  << MeshIndex(CellArray[i].cellNodes[2] , NodeArray)<< " " 
-						  << MeshIndex(CellArray[i].cellNodes[3] , NodeArray)<< endl;
-	}
-	OutFile_FlowField.close();
-	/*delete []u_A;
-	delete []v_A;
-	delete []p_A;*/
+		ostringstream oss_FlowField;
+		oss_FlowField <<"../FlowField/global/" << "step" << step <<"Ma"<< Ma<<"_"
+						<<_MESHTYPE_ARK<<NL<<"_CFL"<<CFL<<"_T"<<t<<".dat";
+		ofstream OutFile_FlowField;
+		FileOpen(OutFile_FlowField,oss_FlowField,"OutFile_FlowField");
+
+		int subZone = 700;
+		// //!-------------------Rho-----------------------
+		// writeHead(OutFile_FlowField,101);
+		// LoopPS(Cells)
+		// {
+		// 	OutFile_FlowField<<CellArray[n].MsQ().Rho<<endl;
+		// }
+		// OutFile_FlowField<<"))"<<endl;
+		// //!-------------------U & V------------------------
+		// writeHead(OutFile_FlowField,2,2);
+		// LoopPS(Cells)
+		// {
+		// 	OutFile_FlowField<<CellArray[n].MsQ().U<<"  "<<CellArray[n].MsQ().V<<endl;
+		// }
+		// OutFile_FlowField<<"))"<<endl;
+		// //-------------------p---------------------------
+		// writeHead(OutFile_FlowField,1);
+		// LoopPS(Cells)
+		// {
+		// 	OutFile_FlowField<<CellArray[n].MsQ().p<<endl;
+		// }
+		// OutFile_FlowField<<"))"<<endl;
+		// //-------------------------T---------------------
+		// writeHead(OutFile_FlowField,3);
+		// LoopPS(Cells)
+		// {
+		// 	OutFile_FlowField<<CellArray[n].MsQ().T<<endl;
+		// }
+		// OutFile_FlowField<<"))"<<endl;
+		//-------------------------Phi---------------------
+		writeHead(OutFile_FlowField,700);
+		LoopPS(Cells)
+		{
+			OutFile_FlowField<<CellArray[n].MsQ().Phi<<endl;
+		}
+		OutFile_FlowField<<"))"<<endl;
 }
+// void Output_Flowfield(double const &t,int step)
+// {
+// 	ostringstream oss_FlowField;
+// 	oss_FlowField <<"../FlowField/global/" << "step" << step <<"Ma"<< Ma<<"_"
+// 					<<_MESHTYPE_ARK<<NL<<"_CFL"<<CFL<<"_T"<<t<<".dat";
+// 	ofstream OutFile_FlowField(oss_FlowField.str().c_str());
+// 	if(!OutFile_FlowField)
+// 	{
+// 		_PRINT_ERROR_MSG_FLIP
+// 		cout <<"  "<<"OutFile_FlowField open failed" << endl; 
+// 		getchar();
+// 		return;
+// 	}
+// /*	q<sub>x</sub>,q<sub>y</sub>,\
+// 	<Greek>t</Greek><sub>xx</sub>,<Greek>t</Greek><sub>xy</sub>,<Greek>t</Greek><sub>yy</sub>,
+// */
+// 	ostringstream VarName,VarLocation,ZoneName,dataNE;
+// 	VarName << "VARIABLES = X,Y,<Greek>r</Greek>,U,V,p,T,\
+// 	<Greek>f</Greek>,\
+// 	<Greek>f</Greek><sub>x</sub>,<Greek>f</Greek><sub>y</sub>,\
+// 	Fx,Fy\n";
+// 	VarLocation <<"VarLocation=([1-2]=NODAL,[3-12]=CellCentered)\n";
+// 	ZoneName<<"ZONE T = Time" << t <<"_"<<"Mu"<<Mu0<<"\n";
+// 	dataNE<<"Nodes="<<Nodes<<", Elements="<<Cells<<", ZONETYPE=FEQuadrilateral\n";
+// 	string tecformat[5]={VarName.str().c_str(),
+// 						ZoneName.str().c_str(),
+// 						dataNE.str().c_str(),
+// 						"DATAPACKING=BLOCK\n",
+// 						VarLocation.str().c_str()};
+// 	OutFile_FlowField << tecformat[0]<<tecformat[1]<<tecformat[2]<<tecformat[3]<<tecformat[4];
+// 	OutFile_FlowField << setiosflags(ios::scientific) << setprecision(12);
+// //	
+// 	/*double *u_A = new double[Cells];
+// 	double *v_A = new double[Cells];
+// 	double *p_A = new double[Cells];
+// 	for(int i = 0;i != Cells;++i)
+// 		TaylorGreenVortex(t,CellArray[i].xc,CellArray[i].yc,u_A[i], v_A[i], p_A[i]);
+// 	*/
+// //---------------------------------------------Node->X-------------------------------------------
+// 	for(int i = 0;i != Nodes;++i)
+// 	{
+// 		OutFile_FlowField << NodeArray[i].xN <<"   ";
+// 		if((i+1)%16 == 0)
+// 			OutFile_FlowField << "\n";
+// 	}
+// 	OutFile_FlowField << endl;
+// //--------------------------------------------Node->Y-------------------------------------------
+// 	for(int i = 0;i != Nodes;++i)
+// 	{
+// 		OutFile_FlowField << NodeArray[i].yN <<"   ";
+// 		if((i+1)%16 == 0)
+// 			OutFile_FlowField << "\n";
+// 	}
+// 	OutFile_FlowField << endl;
+// //--------------------------------------------rho-------------------------------------------
+// 	for(int i = 0;i != Cells;++i)
+// 	{
+// 		OutFile_FlowField << CellArray[i].MsQ().Rho <<"   ";
+// 		if((i+1)%16 == 0)
+// 			OutFile_FlowField << "\n";
+// 	}
+// //--------------------------------------------u-------------------------------------------
+// 	for(int i = 0;i != Cells;++i)
+// 	{
+// 		OutFile_FlowField << CellArray[i].MsQ().U <<"   ";
+// 		if((i+1)%16 == 0)
+// 			OutFile_FlowField << "\n";
+// 	}
+// //--------------------------------------------v-------------------------------------------
+// 	for(int i = 0;i != Cells;++i)
+// 	{
+// 		OutFile_FlowField << CellArray[i].MsQ().V <<"   ";
+// 		if((i+1)%16 == 0)
+// 			OutFile_FlowField << "\n";
+// 	}
+// //--------------------------------------------p-------------------------------------------
+// 	for(int i = 0;i != Cells;++i)
+// 	{
+// 		OutFile_FlowField << CellArray[i].MsQ().p <<"   ";
+// 		if((i+1)%16 == 0)
+// 			OutFile_FlowField << "\n";
+// 	}
+// //--------------------------------------------T-------------------------------------------
+// 	for(int i = 0;i != Cells;++i)
+// 	{
+// 		OutFile_FlowField << CellArray[i].MsQ().T <<"   ";
+// 		if((i+1)%16 == 0)
+// 			OutFile_FlowField << "\n";
+// 	}
+// /*
+// 	for(int i = 0;i != Cells;++i)
+// 	{
+// 		OutFile_FlowField << CellArray[i].MsQ().qx <<"   ";
+// 		if((i+1)%16 == 0)
+// 			OutFile_FlowField << "\n";
+// 	}
+// 	for(int i = 0;i != Cells;++i)
+// 	{
+// 		OutFile_FlowField << CellArray[i].MsQ().qy <<"   ";
+// 		if((i+1)%16 == 0)
+// 			OutFile_FlowField << "\n";
+// 	}
+// 	for(int i = 0;i != Cells;++i)
+// 	{
+// 		OutFile_FlowField << CellArray[i].shearTau[0][0] <<"   ";
+// 		if((i+1)%16 == 0)
+// 			OutFile_FlowField << "\n";
+// 	}
+// 	for(int i = 0;i != Cells;++i)
+// 	{
+// 		OutFile_FlowField << CellArray[i].shearTau[0][1] <<"   ";
+// 		if((i+1)%16 == 0)
+// 			OutFile_FlowField << "\n";
+// 	}
+// 	for(int i = 0;i != Cells;++i)
+// 	{
+// 		OutFile_FlowField << CellArray[i].shearTau[1][1] <<"   ";
+// 		if((i+1)%16 == 0)
+// 			OutFile_FlowField << "\n";
+// 	}
+// */
+// 	// for(int i = 0;i != Cells;++i)
+// 	// {
+// 	// 	OutFile_FlowField << (*CellArray[i].pseudopsi) <<"   ";
+// 	// 	if((i+1)%16 == 0)
+// 	// 		OutFile_FlowField << "\n";
+// 	// }
+// 	for(int i = 0;i != Cells;++i)
+// 	{
+// 		OutFile_FlowField << CellArray[i].MsQ().Phi <<"   ";
+// 		if((i+1)%16 == 0)
+// 			OutFile_FlowField << "\n";
+// 	}
+// 	for(int i = 0;i != Cells;++i)
+// 	{
+// 		OutFile_FlowField << CellArray[i].MsQ().Phi_x <<"   ";
+// 		if((i+1)%16 == 0)
+// 			OutFile_FlowField << "\n";
+// 	}
+// 	for(int i = 0;i != Cells;++i)
+// 	{
+// 		OutFile_FlowField << CellArray[i].MsQ().Phi_y <<"   ";
+// 		if((i+1)%16 == 0)
+// 			OutFile_FlowField << "\n";
+// 	}
+// 	for(int i = 0;i != Cells;++i)
+// 	{
+// 		OutFile_FlowField << CellArray[i].MsQ().Fx <<"   ";
+// 		if((i+1)%16 == 0)
+// 			OutFile_FlowField << "\n";
+// 	}
+// 	for(int i = 0;i != Cells;++i)
+// 	{
+// 		OutFile_FlowField << CellArray[i].MsQ().Fy <<"   ";
+// 		if((i+1)%16 == 0)
+// 			OutFile_FlowField << "\n";
+// 	}
+// /*//--------------------------------------------u_A-------------------------------------------
+// 	for(int i = 0;i != Cells;++i)
+// 	{
+// 		OutFile_FlowField << u_A[i] <<"   ";
+// 		if((i+1)%16 == 0)
+// 			OutFile_FlowField << "\n";
+// 	}
+// //--------------------------------------------v_A-------------------------------------------
+// 	for(int i = 0;i != Cells;++i)
+// 	{
+// 		OutFile_FlowField << v_A[i] <<"   ";
+// 		if((i+1)%16 == 0)
+// 			OutFile_FlowField << "\n";
+// 	}
+// //--------------------------------------------p_A-------------------------------------------
+// 	for(int i = 0;i != Cells;++i)
+// 	{
+// 		OutFile_FlowField << p_A[i] <<"   ";
+// 		if((i+1)%16 == 0)
+// 			OutFile_FlowField << "\n";
+// 	}*/
+// //--------------------------------------------relation----------------------------------------	
+// 	for(int i = 0;i != Cells;++i)
+// 	{
+// 		OutFile_FlowField << MeshIndex(CellArray[i].cellNodes[0] , NodeArray)<< " "
+// 						  << MeshIndex(CellArray[i].cellNodes[1] , NodeArray)<< " "
+// 					 	  << MeshIndex(CellArray[i].cellNodes[2] , NodeArray)<< " " 
+// 						  << MeshIndex(CellArray[i].cellNodes[3] , NodeArray)<< endl;
+// 	}
+// 	OutFile_FlowField.close();
+// 	/*delete []u_A;
+// 	delete []v_A;
+// 	delete []p_A;*/
+// }
 void Output_xcyc()
 {
 	ostringstream oss_xcyc;

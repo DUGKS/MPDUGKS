@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <cmath>
-#include "ZeroConstant.h"
+#include "ZeroNamespace.h"
 #include "Macroscopic.h"
 using std::vector;
 

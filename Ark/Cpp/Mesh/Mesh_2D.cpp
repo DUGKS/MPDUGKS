@@ -80,7 +80,7 @@ Cell_2D::~Cell_2D()
 		delete use;
 	}
 }
-Cell_2D::DVDF::DVDF()
+Cell_2D::DVDF::DVDF():token(new int(1))
 {
 	AllocateARK(BarP,Cell_2D::Qu,Cell_2D::Qv);
 	AllocateARK(BarP_x,Cell_2D::Qu,Cell_2D::Qv);

@@ -1,5 +1,5 @@
-vpath %.h Header:Lib
-vpath %.cpp Cpp:Lib
+vpath %.h Header:Lib:Constant
+vpath %.cpp Cpp:Cpp/Mesh:Lib
 
 Target = ACDUGKS
 QModel = D2Q9AC
@@ -10,21 +10,29 @@ CFLAGS = -std=c++11 -Wall -Wextra -I./Header -I./Lib -I./Constant -O3
 
 MPFLAG = -fopenmp
 
-DIR_SRC = ./Cpp
+ROOT_SRC = ./Cpp
+
+DIR_SRC = $(shell find ${ROOT_SRC} -maxdepth 1 -type d)
+
+SRC = $(foreach dir,$(DIR_SRC),$(wildcard $(dir)/*.cpp))
 
 DIR_OBJ = ./Obj
 
 DIR_OUT = ../FlowField/global ../FlowField/Convergence
 
-SRC = $(wildcard ${DIR_SRC}/*.cpp)
+subObjs = $(patsubst %.cpp,${DIR_OBJ}/%.o,$(notdir ${SRC}))
 
-objects = $(patsubst %.cpp,${DIR_OBJ}/%.o,$(notdir ${SRC})) ${DIR_OBJ}/${QModel}.o
+objects = $(subObjs) ${DIR_OBJ}/${QModel}.o
+
+# ALL:
+
+# 	@echo "SRC:" $(notdir ${SRC})
 
 $(Target):$(objects)
 
 	$(CC) $(objects) -o $@ ${MPFLAG}
 
-${DIR_OBJ}/%.o:${DIR_SRC}/%.cpp
+${DIR_OBJ}/%.o:%.cpp
 
 	$(CC) $(CFLAGS) -c $< -o $@ ${MPFLAG}
 

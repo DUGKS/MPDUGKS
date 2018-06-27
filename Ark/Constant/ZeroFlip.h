@@ -117,13 +117,13 @@
 #define _ARK_ENDTIME_FLIP
 #endif
 
-// #ifndef _OUTPUT_L2NORM_ERROR_FLIP
-// #define _OUTPUT_L2NORM_ERROR_FLIP
-// #endif
+#ifndef _OUTPUT_L2NORM_ERROR_FLIP
+#define _OUTPUT_L2NORM_ERROR_FLIP
+#endif
 
- #ifndef _ARK_NOHUP_FLIP	//Flip on for server
- #define _ARK_NOHUP_FLIP
- #endif
+// #ifndef _ARK_NOHUP_FLIP	//Flip on for server
+// #define _ARK_NOHUP_FLIP
+// #endif
 
 
 //

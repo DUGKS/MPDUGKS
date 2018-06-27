@@ -1,3 +1,4 @@
+    =    Case Name
 256_256_Car_Periodic_Square_LBM    =    Mesh File
 Car    =    Mesh Type
 CD    =    Flux Scheme
@@ -9,45 +10,45 @@ null    =    EoS model
 6    =    right
 7    =    top
 4    =    bottom
-#----------------------------------------
+#--------------thermodynamics------------
 0.5    =    Omega0//sutherland power
 0.666667    =    Prandtl
 0    =    nK//internal degrees of freedom
 1.5    =    specific heat of constant volume
 1.66667    =    Gamma//specific heat ratio
-#----------------------------------------
+#----------------Reference----------------
 1    =    Qu
 9    =    Qv
 256    =    NL
-256    =    Character Length
+256    =    Characteristic Length
 1    =    MinL
 0.221116    =    Knudsen
-0.034641    =    Mach
+0    =    Mach
 10    =    Re
-0.02    =    U0
+0    =    U0
 1    =    R0
 0.333333    =    T0
 0.1    =    dynamic viscosity
 0.1    =    kinetic viscosity
 0.3    =    tau0
 1.5    =    Lambda0
-0.25    =    CFL
-0.25    =    dt
-0.833333    =    dt/tau0
-1e-12    =    RESIDUAL
-102500    =    End_Step
+0.5    =    CFL
+0.5    =    dt
+1.66667    =    dt/tau0
+1e-08    =    RESIDUAL
+-2147483548    =    End_Step
 1    =    MaSpan
 0    =    Eta// T of D2V16
 -------------Phase Field--------------
 0.015625    =    Cahn number
-256    =    Peclet number
+0    =    Peclet number
 0    =    Eotvos(Bond) number
 0    =    Morton number
 0    =    Reynolds number
 
 0.02    =    mobility
 0.06    =    mobility relaxition time
-4.16667    =    dt/tauMass
+8.33333    =    dt/tauMass
 4    =    inteface width
 0.001    =    Sigma(surface tension coefficient)
 0.003    =    Beta

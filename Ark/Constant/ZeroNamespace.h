@@ -1,12 +1,13 @@
 #ifndef _ZERO_INFORMATION_H_
 #define _ZERO_INFORMATION_H_
 
+#include "ZeroReference.h"
 #include "D2Q9.h"
 
 //------------------------------Normalized Parameters----------------------------
 const double 
 
-CFL = 0.25,
+CFL = 0.5,
 
 dt = CFL > 0.0 ? CFL*MinL/MaxU: 1.0E-4,
 
@@ -25,15 +26,7 @@ T_Outlet = T0*((1+0.5*(Gamma-1)*Ma*Ma)*(2.0*Gamma/(Gamma-1)*Ma*Ma-1)/
 U_Outlet = Ma_Outlet*sqrt(Gamma*R0*T_Outlet),
 
 V_Outlet = 0.0;*/
-namespace D2Q9{
 
-double const xi_u[DV_Qv] = {0,1,1,0,-1,-1,-1,0,1};
-
-double const xi_v[DV_Qv] = {0,0,1,1,1,0,-1,-1,-1};
-
-int const _BB[DV_Qv] = {0,5,6,7,8,1,2,3,4};
-
-}
 //---------------------2D-Riemann---------------------------------
 
 const double
@@ -67,7 +60,7 @@ namespace PhaseFieldAC
 {
 	const double
 	
-	M_Phi = 0.005,
+	M_Phi = 0.02,
 	
 	Cn = 4/ChLength,
 	
@@ -165,13 +158,13 @@ ZeroDebugControl = 100, //
 
 ConvergenceControl = 100, //SumRho,SumT,independent
 
-ResidualControl = 10, //print to screen
+ResidualControl = 1000, //print to screen
 
-writeFileControl = 100; //always >= ResidualControl
+writeFileControl = 10000; //always >= ResidualControl
 
 double const
 
-RESIDUAL = 1E-12;
+RESIDUAL = 1E-8;
 
 //used for Cartesian Mesh;
 

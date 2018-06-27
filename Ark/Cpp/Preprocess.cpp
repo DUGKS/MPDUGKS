@@ -6,10 +6,13 @@ using std::string;
 using std::cout;
 using std::endl;
 
+string caseName;
+
 //--------------------------------------------------------------------------------------
 //------------------------------------------Initialization------------------------------
 void UniformFlow()
 {
+		caseName = "UniformFlow";
 		MacroQuantity Initial(Rho0,U0,V0,p0,T0,Lambda0,Mu0);
 		for(int n = 0;n < Cells;++n)
 		{
@@ -91,6 +94,7 @@ void UniformFlow()
 }
 void ShockStructure()
 {
+	caseName = "ShockStructure";
 	double Mu_R = Mu0*pow(T_R/T0,Omega0),Tau_R = Mu_R/p_R;
 //
 	MacroQuantity left(Rho0,U0,V0,p0,T0,Lambda0,Mu0);
@@ -405,6 +409,9 @@ double AnalyticalPhiAC_Drop(double const x,double const y)
 	using PhaseFieldAC::centerY;
 	using PhaseFieldAC::wI;
 	using PhaseFieldAC::radius;
+
+	int slotL = centerX - 10;
+	int slotR = centerX + 10;
 	// double phi = 
 	// 0.5*(PhiL+PhiV) + 0.5*(-PhiL + PhiV)*
 	// tanh
@@ -417,6 +424,10 @@ double AnalyticalPhiAC_Drop(double const x,double const y)
 	{
 		phi = PhiV;
 	}
+	else if(x > slotL && x < slotR && y < centerY)
+	{
+		phi = PhiV;
+	}
 	else
 	{
 		phi = PhiL;
@@ -425,6 +436,7 @@ double AnalyticalPhiAC_Drop(double const x,double const y)
 }
 void AC_ZalesakDisk()
 {
+	caseName = __func__;
 	using PhaseFieldAC::PhiL;
 	using PhaseFieldAC::PhiV;
 	using PhaseFieldAC::aPhi;
@@ -433,8 +445,7 @@ void AC_ZalesakDisk()
 	using PhaseFieldAC::centerY;
 	using PhaseFieldAC::wI;
 	using PhaseFieldAC::radius;
-	int slotL = centerX - 10;
-	int slotR = centerX + 10;
+	
 
 	MacroQuantity init(Rho0,U0,V0,p0,T0,Lambda0,Mu0);
 
@@ -444,10 +455,6 @@ void AC_ZalesakDisk()
 		CellArray[n].MsQ() = init;
 		#ifdef _ARK_ALLENCAHN_FLIP
 		CellArray[n].MsQ().Phi = AnalyticalPhiAC_Drop(xc,yc);
-		if(xc > slotL && xc < slotR && yc < centerY)
-		{
-			CellArray[n].MsQ().Phi = PhiV;
-		}
 		CellArray[n].MsQ().Rho = aPhi*(CellArray[n].MsQ().Phi) + bPhi;
 		#endif
 		//
@@ -493,6 +500,8 @@ void AC_ZalesakDisk()
 }
 void AC_Smoothed()
 {
+	caseName = __func__;
+
 	using PhaseFieldAC::PhiL;
 	using PhaseFieldAC::PhiV;
 	using PhaseFieldAC::aPhi;
@@ -554,72 +563,71 @@ void AC_Smoothed()
 }
 void AC_ShearFlow()
 {
-		using PhaseFieldAC::PhiL;
-		using PhaseFieldAC::PhiV;
-		using PhaseFieldAC::aPhi;
-		using PhaseFieldAC::bPhi;
-		using PhaseFieldAC::wI;
-		using PhaseFieldAC::radius;
-	//
-		MacroQuantity init(Rho0,U0,V0,p0,T0,Lambda0,Mu0);
-		LoopPS(Cells)
+	caseName = __func__;
+	using PhaseFieldAC::PhiL;
+	using PhaseFieldAC::PhiV;
+	using PhaseFieldAC::aPhi;
+	using PhaseFieldAC::bPhi;
+	using PhaseFieldAC::wI;
+	using PhaseFieldAC::radius;
+
+	MacroQuantity init(Rho0,U0,V0,p0,T0,Lambda0,Mu0);
+	LoopPS(Cells)
+	{
+		CellArray[n].MsQ() = init;
+		#ifdef _ARK_ALLENCAHN_FLIP
+		CellArray[n].MsQ().Phi = AnalyticalPhiAC_Drop(CellArray[n].xc,CellArray[n].yc);
+		CellArray[n].MsQ().Rho = aPhi*(CellArray[n].MsQ().Phi) + bPhi;
+		#endif
+		CellArray[n].MsQ().U = 
+		U0*PI*sin(PI*CellArray[n].xc/ChLength)*cos(PI*CellArray[n].yc/ChLength);
+		CellArray[n].MsQ().V = 
+		-U0*PI*cos(PI*CellArray[n].xc/ChLength)*sin(PI*CellArray[n].yc/ChLength);
+		
+
+		#ifdef _ARK_ALLENCAHN_FLIP
+		CellArray[n].h.tau = PhaseFieldAC::TauMass;
+		#endif
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
+		CellArray[n].f.tau = CellArray[n].MsQ().calcTau();
+		#endif
+		CellArray[n].Factor();
+		CellArray[n].FactorAC();
+		Update_phi_Eq(CellArray[n]);
+		LoopVS(DV_Qu,DV_Qv)
 		{
-			CellArray[n].MsQ() = init;
 			#ifdef _ARK_ALLENCAHN_FLIP
-			CellArray[n].MsQ().Phi = AnalyticalPhiAC_Drop(CellArray[n].xc,CellArray[n].yc);
-			CellArray[n].MsQ().Rho = aPhi*(CellArray[n].MsQ().Phi) + bPhi;
-			#endif
-			CellArray[n].MsQ().U = 
-			U0*PI*sin(PI*CellArray[n].xc/ChLength)*cos(PI*CellArray[n].yc/ChLength);
-
-			CellArray[n].MsQ().V = 
-			-U0*PI*cos(PI*CellArray[n].xc/ChLength)*sin(PI*CellArray[n].yc/ChLength);
-
-			
-	//
-			#ifdef _ARK_ALLENCAHN_FLIP
-			CellArray[n].h.tau = PhaseFieldAC::TauMass;
+			CellArray[n].h.Tilde[i][j] = CellArray[n].h.Eq[i][j];
 			#endif
 			//!momentum
 			#ifdef _ARK_MOMENTUM_FLIP
-			CellArray[n].f.tau = CellArray[n].MsQ().calcTau();
+			CellArray[n].f.Tilde[i][j] = CellArray[n].f.Eq[i][j];
 			#endif
-			CellArray[n].Factor();
-			CellArray[n].FactorAC();
-			Update_phi_Eq(CellArray[n]);
-			LoopVS(DV_Qu,DV_Qv)
-			{
-				#ifdef _ARK_ALLENCAHN_FLIP
-				CellArray[n].h.Tilde[i][j] = CellArray[n].h.Eq[i][j];
-				#endif
-				//!momentum
-				#ifdef _ARK_MOMENTUM_FLIP
-				CellArray[n].f.Tilde[i][j] = CellArray[n].f.Eq[i][j];
-				#endif
-			}		
-		}
-		LoopPS(Faces)
-		{
-			FaceArray[n].MsQh() = init;
-
-			FaceArray[n].MsQh().U = 
-			U0*PI*sin(PI*FaceArray[n].xf/ChLength)*cos(PI*FaceArray[n].yf/ChLength);
-
-			FaceArray[n].MsQh().V = 
-			-U0*PI*cos(PI*FaceArray[n].xf/ChLength)*sin(PI*FaceArray[n].yf/ChLength);
-			#ifdef _ARK_ALLENCAHN_FLIP
-			FaceArray[n].h.tauh = PhaseFieldAC::TauMass;
-			#endif
-			//!momentum
-			#ifdef _ARK_MOMENTUM_FLIP
-			FaceArray[n].f.tauh = FaceArray[n].MsQh().calcTau();
-			#endif
-			FaceArray[n].Factor();
-			FaceArray[n].FactorAC();
-		}
+		}		
+	}
+	LoopPS(Faces)
+	{
+		FaceArray[n].MsQh() = init;
+		FaceArray[n].MsQh().U = 
+		U0*PI*sin(PI*FaceArray[n].xf/ChLength)*cos(PI*FaceArray[n].yf/ChLength);
+		FaceArray[n].MsQh().V = 
+		-U0*PI*cos(PI*FaceArray[n].xf/ChLength)*sin(PI*FaceArray[n].yf/ChLength);
+		#ifdef _ARK_ALLENCAHN_FLIP
+		FaceArray[n].h.tauh = PhaseFieldAC::TauMass;
+		#endif
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
+		FaceArray[n].f.tauh = FaceArray[n].MsQh().calcTau();
+		#endif
+		FaceArray[n].Factor();
+		FaceArray[n].FactorAC();
+	}
 }
 void AC_Drop()
 {
+	caseName = __func__;
+
 	using PhaseFieldAC::PhiL;
 	using PhaseFieldAC::PhiV;
 	using PhaseFieldAC::aPhi;
@@ -674,6 +682,8 @@ void AC_Drop()
 }
 void AC_RisingBubble()
 {
+	caseName = __func__;
+
 	using PhaseFieldAC::PhiL;
 	using PhaseFieldAC::PhiV;
 	using PhaseFieldAC::aPhi;
@@ -750,6 +760,8 @@ void LayeredPoiseuilleAnalytical(double const xyz,double &u_A)
 }
 void AC_LayeredPoiseuille()
 {
+	caseName = __func__;
+
 	using PhaseFieldAC::PhiL;
 	using PhaseFieldAC::PhiV;
 	using PhaseFieldAC::RhoL;

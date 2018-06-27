@@ -1,7 +1,7 @@
 #ifndef _MACROSCOPIC_QUANTITY_ARK_H
 #define _MACROSCOPIC_QUANTITY_ARK_H
 
-#include "ZeroConstant.h"
+#include "ZeroNamespace.h"
 // declaration
 class MacroQuantity;
 //-------------friend arithmetic operators-------------------------

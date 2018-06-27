@@ -52,7 +52,7 @@ public:
 		double **Eq    = nullptr;
 		double **So    = nullptr;
 	private:
-		int *token = new int(1);
+		int *token = nullptr;
 	};
 //----------probability density function---------------------
 	#ifdef _ARK_ALLENCAHN_FLIP
@@ -79,9 +79,8 @@ public:
 	double fBPLimiter = 1,gBPLimiter = 1;
 	void Factor();
 	void FactorAC();
-#ifndef _ZERO_NDEBUG_FLIP
+
 private:
-#endif
 	int *use = nullptr;
 };
 #endif

@@ -830,14 +830,16 @@ void Update_Residual(int step)
 	}
 	ResidualPer1k = sqrt(Sumdudv/(SumUV + 1.0E-30));
 	#endif
+
 	Output_Residual(step*dt,ResidualPer1k);
+	if(step%writeFileControl == 0)
+	{
+		Output_Flowfield(step*dt, step);
+		//Output_MidX(step);
+	}
 #endif
 
-	// if(step%writeFileControl == 0)
-	// {
-	// 	Output_Flowfield(step*dt, step);
-	// 	//Output_MidX(step);
-	// }
+	#if defined _ARK_ENDTIME_FLIP
 	if
 	(
 		PhaseFieldAC::iT == step 
@@ -849,6 +851,7 @@ void Update_Residual(int step)
 		Output_Flowfield(step*dt, step);
 		//Output_MidX(step);
 	}
+	#endif
 	//!suppress print to screen on server;
 	#ifndef _ARK_NOHUP_FLIP
 	endLoop = std::chrono::system_clock::now();
