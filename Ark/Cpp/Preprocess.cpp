@@ -410,28 +410,29 @@ double AnalyticalPhiAC_Drop(double const x,double const y)
 	using PhaseFieldAC::wI;
 	using PhaseFieldAC::radius;
 
-	int slotL = centerX - 10;
-	int slotR = centerX + 10;
-	// double phi = 
-	// 0.5*(PhiL+PhiV) + 0.5*(-PhiL + PhiV)*
-	// tanh
-	// (
-	// (sqrt((x-centerX)*(x-centerX) + (y-centerY)*(y-centerY))-radius)
-	// *2/wI
-	// );
-	double phi = 0;
-	if(sqrt((x-centerX)*(x-centerX) + (y-centerY)*(y-centerY)) > radius)
-	{
-		phi = PhiV;
-	}
-	else if(x > slotL && x < slotR && y < centerY)
-	{
-		phi = PhiV;
-	}
-	else
-	{
-		phi = PhiL;
-	}
+	double phi = 
+	0.5*(PhiL+PhiV) + 0.5*(-PhiL + PhiV)*
+	tanh
+	(
+	(sqrt((x-centerX)*(x-centerX) + (y-centerY)*(y-centerY))-radius)
+	*2/wI
+	);
+
+	// int slotL = centerX - 10;
+	// int slotR = centerX + 10;
+	// double phi = 0;
+	// if(sqrt((x-centerX)*(x-centerX) + (y-centerY)*(y-centerY)) > radius)
+	// {
+	// 	phi = PhiV;
+	// }
+	// else if(x > slotL && x < slotR && y < centerY)
+	// {
+	// 	phi = PhiV;
+	// }
+	// else
+	// {
+	// 	phi = PhiL;
+	// }
 	return phi;
 }
 void AC_ZalesakDisk()
@@ -574,15 +575,93 @@ void AC_ShearFlow()
 	MacroQuantity init(Rho0,U0,V0,p0,T0,Lambda0,Mu0);
 	LoopPS(Cells)
 	{
+		double const &xc = CellArray[n].xc, &yc = CellArray[n].yc;
 		CellArray[n].MsQ() = init;
 		#ifdef _ARK_ALLENCAHN_FLIP
 		CellArray[n].MsQ().Phi = AnalyticalPhiAC_Drop(CellArray[n].xc,CellArray[n].yc);
 		CellArray[n].MsQ().Rho = aPhi*(CellArray[n].MsQ().Phi) + bPhi;
 		#endif
+		
 		CellArray[n].MsQ().U = 
-		U0*PI*sin(PI*CellArray[n].xc/ChLength)*cos(PI*CellArray[n].yc/ChLength);
+		U0*PI*sin(PI*xc/ChLength)*cos(PI*yc/ChLength);
 		CellArray[n].MsQ().V = 
-		-U0*PI*cos(PI*CellArray[n].xc/ChLength)*sin(PI*CellArray[n].yc/ChLength);
+		-U0*PI*cos(PI*xc/ChLength)*sin(PI*yc/ChLength);
+
+		// CellArray[n].MsQ().U = 
+		// U0*sin(PI*xc/ChLength)*sin(PI*xc/ChLength)*sin(2*PI*yc/ChLength);
+		// CellArray[n].MsQ().V = 
+		// -U0*sin(PI*yc/ChLength)*sin(PI*yc/ChLength)*sin(2*PI*xc/ChLength);
+		
+
+		#ifdef _ARK_ALLENCAHN_FLIP
+		CellArray[n].h.tau = PhaseFieldAC::TauMass;
+		#endif
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
+		CellArray[n].f.tau = CellArray[n].MsQ().calcTau();
+		#endif
+		CellArray[n].Factor();
+		CellArray[n].FactorAC();
+		Update_phi_Eq(CellArray[n]);
+		LoopVS(DV_Qu,DV_Qv)
+		{
+			#ifdef _ARK_ALLENCAHN_FLIP
+			CellArray[n].h.Tilde[i][j] = CellArray[n].h.Eq[i][j];
+			#endif
+			//!momentum
+			#ifdef _ARK_MOMENTUM_FLIP
+			CellArray[n].f.Tilde[i][j] = CellArray[n].f.Eq[i][j];
+			#endif
+		}		
+	}
+	LoopPS(Faces)
+	{
+		double const &xf = FaceArray[n].xf, &yf = FaceArray[n].yf;
+		FaceArray[n].MsQh() = init;
+
+		FaceArray[n].MsQh().U = 
+		U0*PI*sin(PI*xf/ChLength)*cos(PI*yf/ChLength);
+		FaceArray[n].MsQh().V = 
+		-U0*PI*cos(PI*xf/ChLength)*sin(PI*yf/ChLength);
+
+		// FaceArray[n].MsQh().U = 
+		// U0*sin(PI*xf/ChLength)*sin(PI*xf/ChLength)*sin(2*PI*yf/ChLength);
+		// FaceArray[n].MsQh().V =
+		// -U0*sin(PI*yf/ChLength)*sin(PI*yf/ChLength)*sin(2*PI*xf/ChLength);
+
+		#ifdef _ARK_ALLENCAHN_FLIP
+		FaceArray[n].h.tauh = PhaseFieldAC::TauMass;
+		#endif
+		//!momentum
+		#ifdef _ARK_MOMENTUM_FLIP
+		FaceArray[n].f.tauh = FaceArray[n].MsQh().calcTau();
+		#endif
+		FaceArray[n].Factor();
+		FaceArray[n].FactorAC();
+	}
+}
+void AC_DiagTrans()
+{
+	caseName = __func__;
+	using PhaseFieldAC::PhiL;
+	using PhaseFieldAC::PhiV;
+	using PhaseFieldAC::aPhi;
+	using PhaseFieldAC::bPhi;
+	using PhaseFieldAC::centerX;
+	using PhaseFieldAC::centerY;
+	using PhaseFieldAC::wI;
+	using PhaseFieldAC::radius;
+
+	MacroQuantity init(Rho0,U0,V0,p0,T0,Lambda0,Mu0);
+	LoopPS(Cells)
+	{
+		CellArray[n].MsQ() = init;
+		#ifdef _ARK_ALLENCAHN_FLIP
+		CellArray[n].MsQ().Phi = AnalyticalPhiAC_Drop(CellArray[n].xc,CellArray[n].yc);
+		CellArray[n].MsQ().Rho = aPhi*(CellArray[n].MsQ().Phi) + bPhi;
+		#endif
+		CellArray[n].MsQ().U = U0;
+		CellArray[n].MsQ().V = U0;
 		
 
 		#ifdef _ARK_ALLENCAHN_FLIP
@@ -609,10 +688,8 @@ void AC_ShearFlow()
 	LoopPS(Faces)
 	{
 		FaceArray[n].MsQh() = init;
-		FaceArray[n].MsQh().U = 
-		U0*PI*sin(PI*FaceArray[n].xf/ChLength)*cos(PI*FaceArray[n].yf/ChLength);
-		FaceArray[n].MsQh().V = 
-		-U0*PI*cos(PI*FaceArray[n].xf/ChLength)*sin(PI*FaceArray[n].yf/ChLength);
+		FaceArray[n].MsQh().U = U0;
+		FaceArray[n].MsQh().V = U0;
 		#ifdef _ARK_ALLENCAHN_FLIP
 		FaceArray[n].h.tauh = PhaseFieldAC::TauMass;
 		#endif

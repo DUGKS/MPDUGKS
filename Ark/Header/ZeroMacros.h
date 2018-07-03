@@ -22,6 +22,8 @@ for(int j=0;j<NUMQV;++j)
 
 #define Info cout<<setiosflags(ios::scientific)<<setprecision(12)
 
+#define OUTCASE "../FlowField/"
+
 double const
 
 infinitesimal = 1.0E-14,

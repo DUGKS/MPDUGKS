@@ -9,8 +9,8 @@ public:
 	static int const Qv = DV_Qv;
 //-----------constructors-------------------
 	Face_2D();
-	Face_2D(const Face_2D &rhs) = delete;
-	Face_2D& operator=(const Face_2D &rhs) = delete;
+	Face_2D(const Face_2D &rhs);
+	Face_2D& operator=(const Face_2D &rhs);
 	~Face_2D();
 //
 	Face_2D *shadowF = nullptr;
@@ -33,8 +33,8 @@ public:
 	{
 	public:
 		DVDF();
-		DVDF(const DVDF &rhs) = delete;
-		DVDF& operator=(const DVDF &rhs) = delete;
+		DVDF(const DVDF &rhs);
+		DVDF& operator=(const DVDF &rhs);
 		~DVDF();
 //
 		double tauh = 0.0;
@@ -45,7 +45,11 @@ public:
 		double **BhDt    = nullptr;
 		double **EqhDt   = nullptr;
 		double **SohDt	= nullptr;	//source term
-//
+	private:
+		int *token = nullptr;
+		void assign(const DVDF& rhs);
+		void allocate();
+		void deallocate();
 	};
 //-----------------------discrete velocity distribution function-----------------
 	#ifdef _ARK_ALLENCAHN_FLIP
@@ -69,5 +73,9 @@ public:
 //
 private:
 	int *use = nullptr;
+	void assign(const Face_2D& rhs);
+	void allocate();
+	void deallocate();
 };
+
 #endif

@@ -53,6 +53,9 @@ public:
 		double **So    = nullptr;
 	private:
 		int *token = nullptr;
+		void assign(const DVDF& rhs);
+		void allocate();
+		void deallocate();
 	};
 //----------probability density function---------------------
 	#ifdef _ARK_ALLENCAHN_FLIP
@@ -82,5 +85,7 @@ public:
 
 private:
 	int *use = nullptr;
+	void assign(const Cell_2D &rhs);
 };
+
 #endif

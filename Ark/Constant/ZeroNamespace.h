@@ -60,7 +60,7 @@ namespace PhaseFieldAC
 {
 	const double
 	
-	M_Phi = 0.02,
+	M_Phi = 0.01,
 	
 	Cn = 4/ChLength,
 	
@@ -94,9 +94,9 @@ namespace PhaseFieldAC
 
 	centerX = 0.5*ChLength,
 
-	centerY = 0.5*ChLength,
+	centerY = 0.3*ChLength,
 	
-	radius = 0.4*ChLength,
+	radius = 0.2*ChLength,
 
 	diameter = 2*radius;
 
@@ -108,7 +108,7 @@ namespace PhaseFieldAC
 
 	ReMP = sqrt(Gx*RhoL*(RhoL-RhoV)*diameter)*diameter/MuL,
 
-	T = 2*ChLength/U0;
+	T = 3*ChLength/U0;
 
 	int const 
 
@@ -156,11 +156,11 @@ End_Step = PhaseFieldAC::iT + 100,//log(2.0)/(8.0*PI*PI*Nu0*dt),
 
 ZeroDebugControl = 100, //
 
-ConvergenceControl = 100, //SumRho,SumT,independent
+ConvergenceControl = 10, //SumRho,SumT,independent
 
-ResidualControl = 1000, //print to screen
+ResidualControl = 10, //print to screen
 
-writeFileControl = 10000; //always >= ResidualControl
+writeFileControl = 1000; //always >= ResidualControl
 
 double const
 

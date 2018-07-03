@@ -13,9 +13,9 @@ class Face_2D;
 
 class Cell_2D;
 
-enum MME {PHI = 0,MOM,ENE,Num_t};
+// enum MME {PHI = 0,MOM,ENE,Num_t};
 
-enum Bound {ENPTY = 0,RIGHT,LEFT,TOP,BOTTOM};
+// enum Bound {ENPTY = 0,RIGHT,LEFT,TOP,BOTTOM};
 
 
 #include "Node_2D.h"
@@ -38,4 +38,11 @@ bool doubleEqual(double const &c,double const &d)
 {
 	return EqualZero(c-d);
 }
+
+extern void AllocateARK(double** &f,int const Qu,int const Qv);
+
+extern void DeallocateARK(double** &f,int const Qu,int const Qv);
+
+extern double TriArea(double , double , double , double ,double , double );
+
 #endif

@@ -356,6 +356,10 @@ void Forecast_DVDF_Tilde(Cell_2D &cell)
 {
 	LoopVS(DV_Qu,DV_Qv)
 	{
+		#ifdef _ARK_ALLENCAHN_FLIP
+		cell.h.Tilde[i][j] += ::hDt*cell.h.So[i][j];
+		#endif
+
 		#ifdef _ARK_MOMENTUM_FLIP
 		cell.f.Tilde[i][j] += ::hDt*cell.f.So[i][j];
 		#endif
@@ -366,6 +370,7 @@ void StrangSplitting_Source(Cell_2D &cell)
 	Update_phi_Eq(cell);
 	Update_DVDF_Source(cell);
 	Forecast_DVDF_Tilde(cell);
+
 	#ifdef _ARK_MOMENTUM_FLIP
 	cell.MsQ().U += ::hDt*cell.MsQ().Fx/cell.MsQ().Rho;
 	cell.MsQ().V += ::hDt*cell.MsQ().Fy/cell.MsQ().Rho;
@@ -839,19 +844,23 @@ void Update_Residual(int step)
 	}
 #endif
 
-	#if defined _ARK_ENDTIME_FLIP
+#if defined _ARK_ENDTIME_FLIP
 	if
 	(
 		PhaseFieldAC::iT == step 
+	||  PhaseFieldAC::iT/8 == step
 	||  PhaseFieldAC::iT/4 == step
+	||  PhaseFieldAC::iT*3/8 == step
 	||  PhaseFieldAC::iT/2 == step
-	||  3*PhaseFieldAC::iT/4 == step
+	||  PhaseFieldAC::iT*5/8 == step
+	||  PhaseFieldAC::iT*3/4 == step
+	||  PhaseFieldAC::iT*7/8 == step
 	)
 	{
 		Output_Flowfield(step*dt, step);
 		//Output_MidX(step);
 	}
-	#endif
+#endif
 	//!suppress print to screen on server;
 	#ifndef _ARK_NOHUP_FLIP
 	endLoop = std::chrono::system_clock::now();

@@ -93,6 +93,7 @@ extern void AC_LayeredPoiseuille();
 extern void AC_ShearFlow();
 extern void AC_Smoothed();
 extern void AC_ZalesakDisk();
+extern void AC_DiagTrans();
 //----------------Inc_2DSolver.cpp----------------
 extern void DUGKS2DSolver();
 //--------------Output.cpp------------------------
@@ -127,19 +128,7 @@ int main()
 
 //-------------------Initialization-------------------
 	#include "ZeroCondition.h"
-	//UniformFlow();
-	//LidDrivenSquare();
-	//ShockStructure();
-	//Riemann2D();
-	//TG_Initialization();	
-	//SquareInitialization();
-	//unsteadyTaylorGreen();
-	//TaylorCouetteInitialization();
-	//ForceDrivenTG();
-	//SCMP_Drop();
-	//AC_Drop();
-	//AC_RisingBubble();
-	//AC_LayeredPoiseuille();
+	OutputCase();
 //------------------Solve-------------------
 	#ifndef _ZERO_NDEBUG_FLIP
 	DUGKS2DSolver();

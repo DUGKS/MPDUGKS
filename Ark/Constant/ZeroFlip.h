@@ -40,10 +40,6 @@
 #define _BC_ARK "Periodic"
 #endif
 
-#ifndef _FORCE_MODEL_ARK
-#define _FORCE_MODEL_ARK "He-Shan-Doolean"
-#endif
-
 #ifndef _EOS_MODEL_ARK
 #define _EOS_MODEL_ARK "null"
 #endif
@@ -93,10 +89,12 @@
 
 #ifndef _ARK_FORCE_FLIP
 #define _ARK_FORCE_FLIP
+#define _ARK_FORCE_MODEL "He-Shan-Doolean"
 #endif
 
 // #ifndef _ARK_STRANGSPLIT_FLIP
 // #define _ARK_STRANGSPLIT_FLIP
+// #define _ARK_FORCE_MODEL "StrangSplitting"
 // #endif
 
 //-------------------------------Momentum Energy-------------------------------
@@ -121,9 +119,9 @@
 #define _OUTPUT_L2NORM_ERROR_FLIP
 #endif
 
-// #ifndef _ARK_NOHUP_FLIP	//Flip on for server
-// #define _ARK_NOHUP_FLIP
-// #endif
+#ifndef _ARK_NOHUP_FLIP	//Flip on for server
+#define _ARK_NOHUP_FLIP
+#endif
 
 
 //

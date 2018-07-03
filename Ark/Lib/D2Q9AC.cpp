@@ -152,14 +152,31 @@ void Update_MacroVar(Cell_2D& cell)
 	// -U0*sin(4*PI*xc/ChLength)*sin(4*PI*yc/ChLength)*cos(PI*(step+1)*dt/PhaseFieldAC::T);
 	// cell.MsQ().V = 
 	// -U0*cos(4*PI*xc/ChLength)*cos(4*PI*yc/ChLength)*cos(PI*(step+1)*dt/PhaseFieldAC::T);
-	//--------------------------------shear flow-------------------------------
-	// if(step == PhaseFieldAC::T)
+	//--------------------------------decayed shear flow-------------------------------
+	// double &xc = cell.xc, &yc = cell.yc;
+	// cell.MsQ().U = 
+	// U0*sin(PI*xc/ChLength)*sin(PI*xc/ChLength)*sin(2*PI*yc/ChLength)
+	// *cos(PI*(step+1)*dt/PhaseFieldAC::T);
+	// cell.MsQ().V = 
+	// -U0*sin(PI*yc/ChLength)*sin(PI*yc/ChLength)*sin(2*PI*xc/ChLength)
+	// *cos(PI*(step+1)*dt/PhaseFieldAC::T);
+	//-----------------------------------non decay-------------------------------
+	double &xc = cell.xc, &yc = cell.yc;
+
+	// if(PhaseFieldAC::iT/2 == step)
 	// {
 	// 	cell.MsQ().U = 
-	// 	-U0*PI*sin(PI*cell.xc/ChLength)*cos(PI*cell.yc/ChLength);
+	// 	-U0*sin(PI*xc/ChLength)*sin(PI*xc/ChLength)*sin(2*PI*yc/ChLength);
 	// 	cell.MsQ().V = 
-	// 	U0*PI*cos(PI*cell.xc/ChLength)*sin(PI*cell.yc/ChLength);
+	// 	U0*sin(PI*yc/ChLength)*sin(PI*yc/ChLength)*sin(2*PI*xc/ChLength);
 	// }
+
+	if(PhaseFieldAC::iT/2 == step)
+	{
+		cell.MsQ().U = -U0*PI*sin(PI*xc/ChLength)*cos(PI*yc/ChLength);
+
+		cell.MsQ().V = U0*PI*cos(PI*xc/ChLength)*sin(PI*yc/ChLength);
+	}
 //
 	//!momentum
 	#ifdef _ARK_MOMENTUM_FLIP
@@ -230,14 +247,33 @@ void Update_MacroVar_h(Face_2D& face)
 	// -U0*sin(4*PI*xf/ChLength)*sin(4*PI*yf/ChLength)*cos(PI*(step+0.5)*dt/PhaseFieldAC::T);
 	// face.MsQh().V = 
 	// -U0*cos(4*PI*xf/ChLength)*cos(4*PI*yf/ChLength)*cos(PI*(step+0.5)*dt/PhaseFieldAC::T);
-	//--------------------------------shear flow------------------------------
-	// if(step == PhaseFieldAC::T)
+	//--------------------------------decayed shear flow------------------------------
+	// double &xf = face.xf, &yf = face.yf;
+	// face.MsQh().U = 
+	// U0*sin(PI*xf/ChLength)*sin(PI*xf/ChLength)*sin(2*PI*yf/ChLength)
+	// *cos(PI*(step+0.5)*dt/PhaseFieldAC::T);
+	// face.MsQh().V = 
+	// -U0*sin(PI*yf/ChLength)*sin(PI*yf/ChLength)*sin(2*PI*xf/ChLength)
+	// *cos(PI*(step+0.5)*dt/PhaseFieldAC::T);
+	//---------------------------------non decay---------------------------------------
+	double &xf = face.xf, &yf = face.yf;
+	
+	// if(PhaseFieldAC::iT/2 == step)
 	// {
 	// 	face.MsQh().U = 
-	// 	-U0*PI*sin(PI*face.xf/ChLength)*cos(PI*face.yf/ChLength);
+	// 	-U0*sin(PI*xf/ChLength)*sin(PI*xf/ChLength)*sin(2*PI*yf/ChLength);
+
 	// 	face.MsQh().V = 
-	// 	U0*PI*cos(PI*face.xf/ChLength)*sin(PI*face.yf/ChLength);
+	// 	U0*sin(PI*yf/ChLength)*sin(PI*yf/ChLength)*sin(2*PI*xf/ChLength);
 	// }
+
+	if(PhaseFieldAC::iT/2 == step)
+	{
+		face.MsQh().U = 
+		-U0*PI*sin(PI*xf/ChLength)*cos(PI*yf/ChLength);
+		face.MsQh().V = 
+		U0*PI*cos(PI*xf/ChLength)*sin(PI*yf/ChLength);
+	}
 //
 	//!momentum
 	#ifdef _ARK_MOMENTUM_FLIP

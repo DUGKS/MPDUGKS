@@ -75,13 +75,13 @@ int MeshConstruct(const string &s)
 	string shome(phome);
 	shome += ("/Mesh/" + s +".cas");
 	InFile_Mesh.open(shome);
-	//InFile_Mesh.open(shome + s +".cas");
 	if(!InFile_Mesh)
 	{
-		cout <<"----------------fatal error!!!---------------------"<<endl;
+		printErrorLine();
 		cout << "Mesh file open failed!!!  "<<endl;
-		cout <<"name of mesh file : "<<shome + s +".cas"<<endl;
-		cout <<__FILE__ <<" : "<<__LINE__<<"  "<<__func__<<endl; 
+		cout <<"name of mesh file : "<<shome<<endl;
+		cout <<__FILE__ <<" ; "<<__LINE__<<" ; "<<__func__<<endl; 
+		printErrorLine();
 		exit(0);
 	}
 //

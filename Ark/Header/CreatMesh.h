@@ -3,7 +3,6 @@ MeshArea();
 FacesClassify();
 ShadowCellConstruct();
 NeighbourCellConstruct();
-OutputCase();
 #ifdef _CARTESIAN_MESH_FLIP
 SetFace_dxdy();
 ShadowCellCornerConstruct();

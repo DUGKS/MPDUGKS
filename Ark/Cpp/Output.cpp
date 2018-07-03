@@ -78,7 +78,7 @@ void OutputCase()
 				 <<_FLUX_SCHEME_ARK<<"    =    Flux Scheme"<<endl
 				 <<_BC_ARK<<"    =    Boundary Condition"<<endl
 				 << DmQnName<<"    =    velocity model"<<endl
-				 <<_FORCE_MODEL_ARK<<"    =    Force model"<<endl
+				 <<_ARK_FORCE_MODEL<<"    =    Force model"<<endl
 				 <<_EOS_MODEL_ARK<<"    =    EoS model"<<endl
 				 <<left<<fs<<"="<<fs<<"left"<<endl
 				 <<right<<fs<<"="<<fs<<"right"<<endl
