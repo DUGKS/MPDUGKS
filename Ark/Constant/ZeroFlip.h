@@ -45,7 +45,7 @@
 #endif
 
 #ifndef _MESHFILE_NAME_ARK
-#define _MESHFILE_NAME_ARK "256_256_Car_Periodic_Square_LBM"
+#define _MESHFILE_NAME_ARK "128_128_Car_Periodic_Square_LBM"
 #endif
 //----------------Boundary Condition Macro------------------
 
@@ -98,9 +98,9 @@
 // #endif
 
 //-------------------------------Momentum Energy-------------------------------
-// #ifndef _ARK_MOMENTUM_FLIP
-// #define _ARK_MOMENTUM_FLIP
-// #endif
+#ifndef _ARK_MOMENTUM_FLIP
+#define _ARK_MOMENTUM_FLIP
+#endif
 
 #ifndef _ARK_ISOTHERMAL_FLIP
 #define _ARK_ISOTHERMAL_FLIP
@@ -111,17 +111,17 @@
 // #endif
 //----------------------------------------------------------------------------
 
-#ifndef _ARK_ENDTIME_FLIP
-#define _ARK_ENDTIME_FLIP
-#endif
+// #ifndef _ARK_ENDTIME_FLIP
+// #define _ARK_ENDTIME_FLIP
+// #endif
 
-#ifndef _OUTPUT_L2NORM_ERROR_FLIP
-#define _OUTPUT_L2NORM_ERROR_FLIP
-#endif
+// #ifndef _OUTPUT_L2NORM_ERROR_FLIP
+// #define _OUTPUT_L2NORM_ERROR_FLIP
+// #endif
 
-#ifndef _ARK_NOHUP_FLIP	//Flip on for server
-#define _ARK_NOHUP_FLIP
-#endif
+// #ifndef _ARK_NOHUP_FLIP	//Flip on for server
+// #define _ARK_NOHUP_FLIP
+// #endif
 
 
 //

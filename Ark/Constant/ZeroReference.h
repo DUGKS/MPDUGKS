@@ -7,25 +7,25 @@
 //----------------------Mesh file---------------
 const int 
 
-Nx = 256,
+Nx = 128,
 
-Ny = 256,
+Ny = 128,
 
-NL = 256;//name of mesh file
+NL = 128;//name of mesh file
 
 const double
 
-ChLength = 256.0,
+ChLength = 128.0,
 
 MinL = ChLength/NL,//ChLength/NL,//6.037849742228585e-02,//3.079505855617000e-02,//1.555181192035053e-02,
 //7.776141069016656e-03,//
 X_Beg = 0.0,
 
-X_End = 256,
+X_End = 128,
 
 Y_Beg = 0.0,
 
-Y_End = 256.0,
+Y_End = 128.0,
 
 Lx = X_End - X_Beg,
 
@@ -77,7 +77,7 @@ Lambda0 = 1/(2.0*R0*T0),
 
 Rho0 = 1.0,//4.5435E-2,//CS
 
-U0 = 0.01,//W_i*TC_r,
+U0 = 0.00,//W_i*TC_r,
 
 Ma = U0/sqrt(R0*T0),
 
@@ -85,7 +85,7 @@ V0 = U0,
 
 p0 = 1,
 
-Re = 10.0,
+Re = 0.0,
 
 // Mu0 = U0*ChLength*Rho0/Re,
 

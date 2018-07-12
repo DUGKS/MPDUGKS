@@ -30,7 +30,7 @@ void SourceMomentum(Cell_2D *cellptr)
 	cellptr->msq->calcRho_xRho_y();
 	cellptr->msq->calcFxFy(F);
 //	cellptr->msq->Fy -= Gy*(cellptr->msq->Rho-RhoL);
-	cellptr->msq->Fx += Gx;
+	// cellptr->msq->Fx += Gx;
 }
 void MacroSource(Cell_2D *cellptr)
 {

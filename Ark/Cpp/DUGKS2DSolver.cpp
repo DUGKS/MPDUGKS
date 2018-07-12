@@ -156,11 +156,11 @@ void DUGKS2DSolver()
 #pragma omp parallel
 {
 //!------------------------loop selection---------------------------
-#ifdef _ARK_ENDTIME_FLIP
+
 	while(step < End_Step)
-#else
-	while(ResidualPer1k > RESIDUAL)
-#endif
+//
+	// while(ResidualPer1k > RESIDUAL)
+
 {
 //---------------------------------------------------------
 	#ifdef _ARK_STRANGSPLIT_FLIP
@@ -747,8 +747,6 @@ void Flux_2D(Face_2D &face)
 //-------------------------------------------------------------------------------
 void Update_phi_T(Cell_2D &cell)
 {
-	// for(int i = 0;i < DV_Qu;++i)
-	// for(int j = 0;j < DV_Qv;++j)
 	LoopVS(DV_Qu,DV_Qv)
 	{
 		#ifdef _ARK_ALLENCAHN_FLIP
@@ -807,21 +805,19 @@ void Update_SumRho(int step)
 }
 void Update_Residual(int step)
 {
-//---------------------------density residual-------------------------
 #ifndef _ARK_ENDTIME_FLIP
-	#ifndef _ARK_MOMENTUM_FLIP
-	double SumRho = 0.0,SumdRho = 0.0;
-	double dRho = 0.0;
-	LoopPS(Cells)
-	{
-		dRho = CellArray[n].MsQ().Rho - CellArray[n].MsQ().Rho_1k;
-		SumdRho += dRho*dRho;
-		SumRho += CellArray[n].MsQ().Rho*CellArray[n].MsQ().Rho;
-		CellArray[n].MsQ().Rho_1k = CellArray[n].MsQ().Rho;
-	}
-	ResidualPer1k = sqrt(SumdRho/(SumRho + 1.0E-30));
+//---------------------------density residual-------------------------
+	// double SumRho = 0.0,SumdRho = 0.0;
+	// double dRho = 0.0;
+	// LoopPS(Cells)
+	// {
+	// 	dRho = CellArray[n].MsQ().Rho - CellArray[n].MsQ().Rho_1k;
+	// 	SumdRho += dRho*dRho;
+	// 	SumRho += CellArray[n].MsQ().Rho*CellArray[n].MsQ().Rho;
+	// 	CellArray[n].MsQ().Rho_1k = CellArray[n].MsQ().Rho;
+	// }
+	// ResidualPer1k = sqrt(SumdRho/(SumRho + 1.0E-30));
 //---------------------------velocity residual--------------------------
-	#else
 	double SumUV = 0.0,Sumdudv = 0.0;
 	double du = 0.0, dv = 0.0;
 	for(int i = 0;i < Cells;++i)
@@ -834,7 +830,6 @@ void Update_Residual(int step)
 		CellArray[i].MsQ().V_1k = CellArray[i].MsQ().V;
 	}
 	ResidualPer1k = sqrt(Sumdudv/(SumUV + 1.0E-30));
-	#endif
 
 	Output_Residual(step*dt,ResidualPer1k);
 	if(step%writeFileControl == 0)
@@ -859,6 +854,10 @@ void Update_Residual(int step)
 	{
 		Output_Flowfield(step*dt, step);
 		//Output_MidX(step);
+	}
+	if(step > PhaseFieldAC::iT &&step%10 == 0)
+	{
+		Output_Flowfield(step*dt, step);
 	}
 #endif
 	//!suppress print to screen on server;

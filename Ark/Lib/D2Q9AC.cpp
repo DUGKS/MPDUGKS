@@ -33,13 +33,13 @@ double const Kp = RT*9/5.0;
 
 void MacroQuantity::calcMu()
 {
-		// Mu=PhaseFieldAC::MuV + (Phi-PhaseFieldAC::PhiV)*(PhaseFieldAC::MuL-PhaseFieldAC::MuV);
+		Mu=PhaseFieldAC::MuV + (Phi-PhaseFieldAC::PhiV)*(PhaseFieldAC::MuL-PhaseFieldAC::MuV);
 		
-		Mu = PhaseFieldAC::MuV*PhaseFieldAC::MuL/
-			( 
-			  (Phi-PhaseFieldAC::PhiV)*PhaseFieldAC::MuV 
-			+ (PhaseFieldAC::PhiL-Phi)*PhaseFieldAC::MuL
-			);
+		// Mu = PhaseFieldAC::MuV*PhaseFieldAC::MuL/
+		// 	( 
+		// 	  (Phi-PhaseFieldAC::PhiV)*PhaseFieldAC::MuV 
+		// 	+ (PhaseFieldAC::PhiL-Phi)*PhaseFieldAC::MuL
+		// 	);
 
 		// Mu = PhaseFieldAC::NuV*PhaseFieldAC::NuL/
 		// 	( 
@@ -47,7 +47,10 @@ void MacroQuantity::calcMu()
 		// 	+ (PhaseFieldAC::PhiL-Phi)*PhaseFieldAC::NuL
 		// 	);
 		// Mu *= Rho;
-		// Mu = PhaseFieldAC::NuV + (Phi-PhaseFieldAC::PhiV)*(PhaseFieldAC::NuL-PhaseFieldAC::NuV);
+
+		// Mu = PhaseFieldAC::NuV + 
+		// 		(Phi-PhaseFieldAC::PhiV)*(PhaseFieldAC::NuL-PhaseFieldAC::NuV);
+		// Mu *= Rho;
 }
 double MacroQuantity::calcTau()
 {
@@ -161,7 +164,7 @@ void Update_MacroVar(Cell_2D& cell)
 	// -U0*sin(PI*yc/ChLength)*sin(PI*yc/ChLength)*sin(2*PI*xc/ChLength)
 	// *cos(PI*(step+1)*dt/PhaseFieldAC::T);
 	//-----------------------------------non decay-------------------------------
-	double &xc = cell.xc, &yc = cell.yc;
+	// double &xc = cell.xc, &yc = cell.yc;
 
 	// if(PhaseFieldAC::iT/2 == step)
 	// {
@@ -171,12 +174,12 @@ void Update_MacroVar(Cell_2D& cell)
 	// 	U0*sin(PI*yc/ChLength)*sin(PI*yc/ChLength)*sin(2*PI*xc/ChLength);
 	// }
 
-	if(PhaseFieldAC::iT/2 == step)
-	{
-		cell.MsQ().U = -U0*PI*sin(PI*xc/ChLength)*cos(PI*yc/ChLength);
+	// if(PhaseFieldAC::iT/2 == step)
+	// {
+	// 	cell.MsQ().U = -U0*PI*sin(PI*xc/ChLength)*cos(PI*yc/ChLength);
 
-		cell.MsQ().V = U0*PI*cos(PI*xc/ChLength)*sin(PI*yc/ChLength);
-	}
+	// 	cell.MsQ().V = U0*PI*cos(PI*xc/ChLength)*sin(PI*yc/ChLength);
+	// }
 //
 	//!momentum
 	#ifdef _ARK_MOMENTUM_FLIP
@@ -256,8 +259,8 @@ void Update_MacroVar_h(Face_2D& face)
 	// -U0*sin(PI*yf/ChLength)*sin(PI*yf/ChLength)*sin(2*PI*xf/ChLength)
 	// *cos(PI*(step+0.5)*dt/PhaseFieldAC::T);
 	//---------------------------------non decay---------------------------------------
-	double &xf = face.xf, &yf = face.yf;
-	
+	// double &xf = face.xf, &yf = face.yf;
+	//------------------------------------PRE2014Liang---------------------------
 	// if(PhaseFieldAC::iT/2 == step)
 	// {
 	// 	face.MsQh().U = 
@@ -266,14 +269,14 @@ void Update_MacroVar_h(Face_2D& face)
 	// 	face.MsQh().V = 
 	// 	U0*sin(PI*yf/ChLength)*sin(PI*yf/ChLength)*sin(2*PI*xf/ChLength);
 	// }
-
-	if(PhaseFieldAC::iT/2 == step)
-	{
-		face.MsQh().U = 
-		-U0*PI*sin(PI*xf/ChLength)*cos(PI*yf/ChLength);
-		face.MsQh().V = 
-		U0*PI*cos(PI*xf/ChLength)*sin(PI*yf/ChLength);
-	}
+	//------------------------------------PRE2016Ren------------------------------
+	// if(PhaseFieldAC::iT/2 == step)
+	// {
+	// 	face.MsQh().U = 
+	// 	-U0*PI*sin(PI*xf/ChLength)*cos(PI*yf/ChLength);
+	// 	face.MsQh().V = 
+	// 	U0*PI*cos(PI*xf/ChLength)*sin(PI*yf/ChLength);
+	// }
 //
 	//!momentum
 	#ifdef _ARK_MOMENTUM_FLIP

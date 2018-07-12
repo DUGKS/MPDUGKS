@@ -360,13 +360,16 @@ void update_Laplacian_Phi(Cell_2D *cellptr)
 	  	)
 	-	20*(cellptr->msq->Phi)
 	)/(6*MinL*MinL);
+
+	//---------------------------5points--------------------
+	// cellptr->msq->laplacianPhi = update_Phi_xx(cellptr) + update_Phi_yy(cellptr);
 }
 void Grad_Phi_6points(Cell_2D *center)
 {
 	update_Phi_x(center);
 	update_Phi_y(center);
 	update_Laplacian_Phi(center);
-//	center->msq->laplacianPhi = update_Phi_xx(center) + update_Phi_yy(center);
+	
 //
 	SetZero(center->msq->Phi_x);
 	SetZero(center->msq->Phi_y);

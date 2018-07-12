@@ -136,11 +136,30 @@ void OutputCase()
 				 <<PhaseFieldAC::NuV<<"    =    vapor kinetic viscosity"<<endl
 				 <<PhaseFieldAC::RhoL/PhaseFieldAC::RhoV<<"    =    "<<"density ratio"<<endl
 				 <<PhaseFieldAC::MuL/PhaseFieldAC::MuV<<"    =    "<<"dynamic viscosity ratio"<<endl
+				 <<PhaseFieldAC::radius/ChLength<<"    =    radius"<<endl
 				 #endif
 				 <<"-------------End--------------"<<endl;
 
 	OutFile_Case.close();
 //
+}
+double thermoPressure(Cell_2D const &cell)
+{
+	using PhaseFieldAC::Kappa;
+	using PhaseFieldAC::Beta;
+	using PhaseFieldAC::aPhi;
+	using PhaseFieldAC::PhiL;
+	using PhaseFieldAC::PhiV;
+
+	double Phi = cell.MsQ().Phi;
+	double SqGradPhi = (cell.MsQ().Rho_x*cell.MsQ().Rho_x
+					 +  cell.MsQ().Rho_y*cell.MsQ().Rho_y)/(aPhi*aPhi);
+	double pZero = Phi*2*Beta*(Phi-PhiL)*(Phi-PhiV)*(2*Phi-PhiL-PhiV)
+					-Beta*(Phi-PhiL)*(Phi-PhiL)*(Phi-PhiV)*(Phi-PhiV);
+
+	return 
+	(pZero - Kappa*Phi*cell.MsQ().laplacianPhi + Kappa*SqGradPhi/2
+	+ cell.MsQ().p);
 }
 void TaylorGreen_L2Norm(double const &t,double &L2_uv, double &L2_p)
 {
@@ -266,10 +285,35 @@ void Output_Residual(double t,double Residual)
 	OutFile_Residual << t <<"    "<<Residual<<endl;
 	OutFile_Residual.close();
 }
+void writeMidXHead
+(
+	ofstream &MidFile,
+	const string &Name,
+	string const &Title,
+	double const& MQ
+)
+{
+	MidFile<<"variables = Y,"<<Name<<nl
+		   <<"zone T = "<<Title<<MQ<<" "
+		   <<"I = "<<Ny<<endl;
+}
+void writeMidYHead
+(
+	ofstream &MidFile,
+	const string &Name,
+	string const &Title,
+	double const& MQ
+)
+{
+	MidFile<<"variables = X,"<<Name<<nl
+		   <<"zone T = "<<Title<<MQ<<" "
+		   <<"I = "<<Nx<<endl;
+}
 void Output_MidX(int step)
 {
 	using PhaseFieldAC::RhoL;
 	using PhaseFieldAC::RhoV;
+	using PhaseFieldAC::M_Phi;
 	int const midX = Nx/2;
 	//int const mid = 1;
 	ostringstream oss_MidX;
@@ -284,12 +328,43 @@ void Output_MidX(int step)
 		exit(-1);
 	}
 	OutFile_MidX<<std::setiosflags(ios::scientific)<<std::setprecision(20);
+	//
+	writeMidXHead(OutFile_MidX,"Rho","Rho_M",M_Phi);
 	for(int k = 1;k < Nyp1;++k)
 	{
-		double u_A;
 		Cell_2D &cell = *CarCellArray[midX][k];
-		LayeredPoiseuilleAnalytical(cell.yc,u_A);
-		OutFile_MidX<<cell.yc<<fs<<cell.MsQ().Rho<<fs<<cell.MsQ().U<<fs<<u_A<<endl;
+		OutFile_MidX<<cell.yc<<fs<<cell.MsQ().Rho<<endl;
+	}
+	//
+	// writeMidXHead(OutFile_MidX,"U","U_M",M_Phi);
+	// for(int k = 1;k < Nyp1;++k)
+	// {
+	// 	Cell_2D &cell = *CarCellArray[midX][k];
+	// 	OutFile_MidX<<cell.yc<<cell.MsQ().U<<endl;
+	// }
+	// //
+	// writeMidXHead(OutFile_MidX,"UA","UA_M",M_Phi);
+	// for(int k = 1;k < Nyp1;++k)
+	// {
+	// 	double u_A;
+	// 	Cell_2D &cell = *CarCellArray[midX][k];
+	// 	LayeredPoiseuilleAnalytical(cell.yc,u_A);
+	// 	OutFile_MidX<<cell.yc<<fs<<u_A<<endl;
+	// }
+	//
+	writeMidXHead(OutFile_MidX,"DP","DP_M",M_Phi);
+	for(int k = 1;k < Nyp1;++k)
+	{
+		Cell_2D &cell = *CarCellArray[midX][k];
+		OutFile_MidX<<cell.yc<<fs<<cell.MsQ().p<<endl;
+	}
+	//
+	writeMidXHead(OutFile_MidX,"TP","TP_M",M_Phi);
+	for(int k = 1;k < Nyp1;++k)
+	{
+		Cell_2D &cell = *CarCellArray[midX][k];
+		double TP = thermoPressure(cell);
+		OutFile_MidX<<cell.yc<<fs<<TP<<endl;
 	}
 }
 void Output_MidX_reverse(int step)
@@ -310,18 +385,19 @@ void Output_MidX_reverse(int step)
 		exit(-1);
 	}
 	OutFile_MidX<<std::setiosflags(ios::scientific)<<std::setprecision(20);
-	for(int k = Ny;k > 0;--k)
-	{
-		double u_A;
-		Cell_2D &cell = *CarCellArray[midX][k];
-		LayeredPoiseuilleAnalytical(cell.yc,u_A);
-		OutFile_MidX<<cell.yc<<fs<<cell.MsQ().Rho<<fs<<cell.MsQ().U<<fs<<u_A<<endl;
-	}
+	// for(int k = Ny;k > 0;--k)
+	// {
+	// 	double u_A;
+	// 	Cell_2D &cell = *CarCellArray[midX][k];
+	// 	LayeredPoiseuilleAnalytical(cell.yc,u_A);
+	// 	OutFile_MidX<<cell.yc<<fs<<cell.MsQ().Rho<<fs<<cell.MsQ().U<<fs<<u_A<<endl;
+	// }
 }
 void Output_MidY(int step)
 {
 	using PhaseFieldAC::RhoL;
 	using PhaseFieldAC::RhoV;
+	using PhaseFieldAC::M_Phi;
 	int const midY = Ny/2;
 	//int const mid = 1;
 	ostringstream oss_MidY;
@@ -336,19 +412,40 @@ void Output_MidY(int step)
 		exit(-1);
 	}
 	OutFile_MidY<<std::setiosflags(ios::scientific)<<std::setprecision(20);
+	// for(int k = 1;k < Nxp1;++k)
+	// {
+	// 	double u_A;
+	// 	Cell_2D &cell = *CarCellArray[k][midY];
+	// 	LayeredPoiseuilleAnalytical(cell.yc,u_A);
+	// 	OutFile_MidY<<cell.xc<<fs<<cell.MsQ().Rho<<fs<<cell.MsQ().V<<fs<<u_A<<endl;
+	// }
+	writeMidYHead(OutFile_MidY,"Rho","Rho_M",M_Phi);
 	for(int k = 1;k < Nxp1;++k)
 	{
-		double u_A;
 		Cell_2D &cell = *CarCellArray[k][midY];
-		LayeredPoiseuilleAnalytical(cell.yc,u_A);
-		OutFile_MidY<<cell.xc<<fs<<cell.MsQ().Rho<<fs<<cell.MsQ().V<<fs<<u_A<<endl;
+		OutFile_MidY<<cell.xc<<fs<<cell.MsQ().Rho<<endl;
 	}
+	//
+	writeMidYHead(OutFile_MidY,"DP","DP_M",M_Phi);
+	for(int k = 1;k < Nxp1;++k)
+	{
+		Cell_2D &cell = *CarCellArray[k][midY];
+		OutFile_MidY<<cell.xc<<fs<<cell.MsQ().p<<endl;
+	}
+	//
+	writeMidYHead(OutFile_MidY,"TP","TP_M",M_Phi);
+	for(int k = 1;k < Nxp1;++k)
+	{
+		Cell_2D &cell = *CarCellArray[k][midY];
+		OutFile_MidY<<cell.xc<<fs<<thermoPressure(cell)<<endl;
+	}
+
 }
-void writeHead(ofstream &OutFile,int const subZone)
-{
-	OutFile<<"(300 ("<<subZone<<" 2 1 0 0 1 "<<Cells<<")("<<endl;
-}
-void writeHead(ofstream &OutFile,int const subZone,int const nD)
+// void writeHead(ofstream &OutFile,int const subZone)
+// {
+// 	OutFile<<"(300 ("<<subZone<<" 2 1 0 0 1 "<<Cells<<")("<<endl;
+// }
+void writeHead(ofstream &OutFile,int const subZone,int const nD = 1)
 {
 	OutFile<<"(300 ("<<subZone<<" 2 "<<nD<<" 0 0 1 "<<Cells<<")("<<endl;
 }
@@ -361,27 +458,27 @@ void Output_Flowfield(double const &t,int step)
 		FileOpen(OutFile_FlowField,oss_FlowField,"OutFile_FlowField");
 
 		int subZone = 700;
-		// //!-------------------Rho-----------------------
-		// writeHead(OutFile_FlowField,101);
-		// LoopPS(Cells)
-		// {
-		// 	OutFile_FlowField<<CellArray[n].MsQ().Rho<<endl;
-		// }
-		// OutFile_FlowField<<"))"<<endl;
-		// //!-------------------U & V------------------------
-		// writeHead(OutFile_FlowField,2,2);
-		// LoopPS(Cells)
-		// {
-		// 	OutFile_FlowField<<CellArray[n].MsQ().U<<"  "<<CellArray[n].MsQ().V<<endl;
-		// }
-		// OutFile_FlowField<<"))"<<endl;
-		// //-------------------p---------------------------
-		// writeHead(OutFile_FlowField,1);
-		// LoopPS(Cells)
-		// {
-		// 	OutFile_FlowField<<CellArray[n].MsQ().p<<endl;
-		// }
-		// OutFile_FlowField<<"))"<<endl;
+		//!-------------------Rho-----------------------
+		writeHead(OutFile_FlowField,101);
+		LoopPS(Cells)
+		{
+			OutFile_FlowField<<CellArray[n].MsQ().Rho<<endl;
+		}
+		OutFile_FlowField<<"))"<<endl;
+		//!-------------------U & V------------------------
+		writeHead(OutFile_FlowField,2,2);
+		LoopPS(Cells)
+		{
+			OutFile_FlowField<<CellArray[n].MsQ().U<<"  "<<CellArray[n].MsQ().V<<endl;
+		}
+		OutFile_FlowField<<"))"<<endl;
+		//-------------------p---------------------------
+		writeHead(OutFile_FlowField,1);
+		LoopPS(Cells)
+		{
+			OutFile_FlowField<<CellArray[n].MsQ().p<<endl;
+		}
+		OutFile_FlowField<<"))"<<endl;
 		// //-------------------------T---------------------
 		// writeHead(OutFile_FlowField,3);
 		// LoopPS(Cells)
@@ -394,6 +491,27 @@ void Output_Flowfield(double const &t,int step)
 		LoopPS(Cells)
 		{
 			OutFile_FlowField<<CellArray[n].MsQ().Phi<<endl;
+		}
+		OutFile_FlowField<<"))"<<endl;
+		//----------------tau-------------------
+		writeHead(OutFile_FlowField,701);
+		LoopPS(Cells)
+		{
+			OutFile_FlowField<<CellArray[n].f.tau<<endl;
+		}
+		OutFile_FlowField<<"))"<<endl;
+		//----------------Fx-------------------
+		writeHead(OutFile_FlowField,702);
+		LoopPS(Cells)
+		{
+			OutFile_FlowField<<CellArray[n].MsQ().Fx<<endl;
+		}
+		OutFile_FlowField<<"))"<<endl;
+		//----------------Fy-------------------
+		writeHead(OutFile_FlowField,703);
+		LoopPS(Cells)
+		{
+			OutFile_FlowField<<CellArray[n].MsQ().Fy<<endl;
 		}
 		OutFile_FlowField<<"))"<<endl;
 }

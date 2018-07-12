@@ -433,6 +433,7 @@ double AnalyticalPhiAC_Drop(double const x,double const y)
 	// {
 	// 	phi = PhiL;
 	// }
+	
 	return phi;
 }
 void AC_ZalesakDisk()
@@ -581,7 +582,7 @@ void AC_ShearFlow()
 		CellArray[n].MsQ().Phi = AnalyticalPhiAC_Drop(CellArray[n].xc,CellArray[n].yc);
 		CellArray[n].MsQ().Rho = aPhi*(CellArray[n].MsQ().Phi) + bPhi;
 		#endif
-		
+
 		CellArray[n].MsQ().U = 
 		U0*PI*sin(PI*xc/ChLength)*cos(PI*yc/ChLength);
 		CellArray[n].MsQ().V = 
