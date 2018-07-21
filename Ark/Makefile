@@ -2,7 +2,7 @@ vpath %.h Header:Lib:Constant
 vpath %.cpp Cpp:Cpp/Mesh:Lib
 
 Target = ACDUGKS
-QModel = D2Q9AC
+QModel = D2Q9HCZ
 
 CC = icpc
 

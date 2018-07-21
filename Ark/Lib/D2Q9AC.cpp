@@ -33,7 +33,7 @@ double const Kp = RT*9/5.0;
 
 void MacroQuantity::calcMu()
 {
-		Mu=PhaseFieldAC::MuV + (Phi-PhaseFieldAC::PhiV)*(PhaseFieldAC::MuL-PhaseFieldAC::MuV);
+		// Mu=PhaseFieldAC::MuV + (Phi-PhaseFieldAC::PhiV)*(PhaseFieldAC::MuL-PhaseFieldAC::MuV);
 		
 		// Mu = PhaseFieldAC::MuV*PhaseFieldAC::MuL/
 		// 	( 
@@ -51,6 +51,8 @@ void MacroQuantity::calcMu()
 		// Mu = PhaseFieldAC::NuV + 
 		// 		(Phi-PhaseFieldAC::PhiV)*(PhaseFieldAC::NuL-PhaseFieldAC::NuV);
 		// Mu *= Rho;
+
+		Mu = Rho*RT*Tau0;
 }
 double MacroQuantity::calcTau()
 {
@@ -145,9 +147,11 @@ void Update_MacroVar(Cell_2D& cell)
 {
 	#ifdef _ARK_ALLENCAHN_FLIP
 	cell.MsQ().Phi  = IntegralGH(DV_Qv,cell.h.Tilde[0]);
+	//resetPhi(cell.MsQ().Phi);
 	#endif
 	//
 	cell.MsQ().Rho  = aPhi*cell.MsQ().Phi + bPhi;
+	double RhoModify = resetRho(cell.MsQ().Rho);
 
 	//--------------------------------smoothed flow---------------------------
 	// double &xc = cell.xc, &yc = cell.yc;
@@ -183,15 +187,15 @@ void Update_MacroVar(Cell_2D& cell)
 //
 	//!momentum
 	#ifdef _ARK_MOMENTUM_FLIP
-	cell.MsQ().U    = (IntegralGH(DV_Qv,cell.f.Tilde[0],xi_u))/(cell.MsQ().Rho);
-	cell.MsQ().V    = (IntegralGH(DV_Qv,cell.f.Tilde[0],xi_v))/(cell.MsQ().Rho);
-	#ifdef _ARK_FORCE_FLIP
-	cell.MsQ().U += hDt*(cell.MsQ().Fx)/cell.MsQ().Rho;
-	cell.MsQ().V += hDt*(cell.MsQ().Fy)/cell.MsQ().Rho;
-	#endif
+	// cell.MsQ().U    = (IntegralGH(DV_Qv,cell.f.Tilde[0],xi_u))/RhoModify;
+	// cell.MsQ().V    = (IntegralGH(DV_Qv,cell.f.Tilde[0],xi_v))/RhoModify;
+	// #ifdef _ARK_FORCE_FLIP
+	// cell.MsQ().U += hDt*(cell.MsQ().Fx)/RhoModify;
+	// cell.MsQ().V += hDt*(cell.MsQ().Fy)/RhoModify;
+	// #endif
 //
-	// cell.MsQ().U = 0.0;
-	// cell.MsQ().V = 0.0;
+	cell.MsQ().U = 0.0;
+	cell.MsQ().V = 0.0;
 
 	cell.MsQ().p = IntegralGH(DV_Qv,cell.f.Tilde[0]) - cell.f.Tilde[0][0];
 	cell.MsQ().p += (hDt*cell.MsQ().RhoXUYV()
@@ -241,9 +245,11 @@ void Update_MacroVar_h(Face_2D& face)
 
 	#ifdef _ARK_ALLENCAHN_FLIP
 	face.MsQh().Phi  = IntegralGH(DV_Qv,face.h.BhDt[0]);
+	//resetPhi(face.MsQh().Phi);
 	#endif
 	//
 	face.MsQh().Rho  = aPhi*face.MsQh().Phi + bPhi;
+	double RhoModify = resetRho(face.MsQh().Rho);
 	//--------------------------------smoothed flow---------------------------
 	// double &xf = face.xf, &yf = face.yf;
 	// face.MsQh().U = 
@@ -280,15 +286,15 @@ void Update_MacroVar_h(Face_2D& face)
 //
 	//!momentum
 	#ifdef _ARK_MOMENTUM_FLIP
-	face.MsQh().U    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_u)/(face.MsQh().Rho);
-	face.MsQh().V    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_v)/(face.MsQh().Rho);
-	#ifdef _ARK_FORCE_FLIP
-	face.MsQh().U += 0.5*hDt*face.MsQh().Fx/face.MsQh().Rho;
-	face.MsQh().V += 0.5*hDt*face.MsQh().Fy/face.MsQh().Rho;
-	#endif
+	// face.MsQh().U    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_u)/(RhoModify);
+	// face.MsQh().V    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_v)/(RhoModify);
+	// #ifdef _ARK_FORCE_FLIP
+	// face.MsQh().U += 0.5*hDt*face.MsQh().Fx/RhoModify;
+	// face.MsQh().V += 0.5*hDt*face.MsQh().Fy/RhoModify;
+	// #endif
 
-	// face.MsQh().U = 0.0;
-	// face.MsQh().V = 0.0;
+	face.MsQh().U = 0.0;
+	face.MsQh().V = 0.0;
 
 	face.MsQh().p    = IntegralGH(DV_Qv,face.f.BhDt[0])-face.f.BhDt[0][0];
 	face.MsQh().p   += (

@@ -411,7 +411,7 @@ double AnalyticalPhiAC_Drop(double const x,double const y)
 	using PhaseFieldAC::radius;
 
 	double phi = 
-	0.5*(PhiL+PhiV) + 0.5*(-PhiL + PhiV)*
+	0.5*(PhiL+PhiV) + 0.5*(PhiL - PhiV)*
 	tanh
 	(
 	(sqrt((x-centerX)*(x-centerX) + (y-centerY)*(y-centerY))-radius)
@@ -433,7 +433,7 @@ double AnalyticalPhiAC_Drop(double const x,double const y)
 	// {
 	// 	phi = PhiL;
 	// }
-	
+
 	return phi;
 }
 void AC_ZalesakDisk()

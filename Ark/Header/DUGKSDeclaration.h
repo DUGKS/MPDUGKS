@@ -65,5 +65,4 @@ inline int MeshIndex(const T &End,const T &Beg)
 {
 	return (nullptr == End ? 0 : End - Beg + 1);
 }
-
 #endif

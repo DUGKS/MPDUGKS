@@ -68,7 +68,7 @@ namespace PhaseFieldAC
 	
 	wI = ChLength*Cn,
 
-	Sigma = 1E-3,
+	Sigma = 1E-2,
 
 	Beta = 12.0*Sigma/wI,
 
@@ -78,7 +78,7 @@ namespace PhaseFieldAC
 	
 	PhiL = 1.0,	PhiV = 0.0,
 	
-	RhoL = 1000.0,RhoV = 1.0,
+	RhoL = 10.0,RhoV = 1.0,
 
 	// MuL = Mu0,	MuV = Mu0,
 
@@ -100,7 +100,7 @@ namespace PhaseFieldAC
 
 	centerY = 0.5*ChLength,
 	
-	radius = 0.25*ChLength,
+	radius = 0.36*ChLength,
 
 	diameter = 2*radius;
 
@@ -112,11 +112,21 @@ namespace PhaseFieldAC
 
 	ReMP = sqrt(Gx*RhoL*(RhoL-RhoV)*diameter)*diameter/MuL,
 
-	T = ChLength/U0;
+	T = 2*ChLength/U0;
 
 	int const 
 
 	iT = T/dt;
+
+	inline void resetPhi(double &Phi)
+	{
+		if(Phi > PhiL) Phi = PhiL;
+	}
+
+	inline double resetRho(double Rho)
+	{
+		return (Rho > 9.99995 ? RhoL : Rho);
+	}
 }
 
 namespace PseudoPotentialSC
@@ -156,19 +166,19 @@ const int
 
 VelocityZone = 7,//7 == TC
 
-End_Step = 1000000,//PhaseFieldAC::iT + 200,//log(2.0)/(8.0*PI*PI*Nu0*dt),
+End_Step = PhaseFieldAC::iT + 200,//log(2.0)/(8.0*PI*PI*Nu0*dt),
 
 ZeroDebugControl = 100, //
 
-ConvergenceControl = 100, //SumRho,SumT,independent
+ConvergenceControl = 1000, //SumRho,SumT,independent
 
-ResidualControl = 100, //print to screen
+ResidualControl = 1000, //print to screen
 
-writeFileControl = 100; //always >= ResidualControl
+writeFileControl = 10000; //always >= ResidualControl
 
 double const
 
-RESIDUAL = 1E-6;
+RESIDUAL = 1E-12;
 
 //used for Cartesian Mesh;
 

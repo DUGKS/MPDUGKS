@@ -34,6 +34,8 @@ extern void Output_MidX(int step);
 
 extern void Output_MidY(int step);
 
+extern void Output_Diag(int step);
+
 //------------------------Boundary.cpp----------------------
 
 extern void P_Inlet_4_Boundary();
@@ -157,10 +159,9 @@ void DUGKS2DSolver()
 {
 //!------------------------loop selection---------------------------
 
-	while(step < End_Step)
+	// while(step < End_Step)
 //
-	// while(ResidualPer1k > RESIDUAL)
-
+	while(ResidualPer1k > RESIDUAL)
 {
 //---------------------------------------------------------
 	#ifdef _ARK_STRANGSPLIT_FLIP
@@ -328,8 +329,7 @@ void DUGKS2DSolver()
 }
 	IntegralShearStress();
 	Output_Flowfield((step)*dt,step);
-	Output_MidX(step);
-	Output_MidY(step);
+	Output_Diag(step);
 //
 	printSplitLine();
 	cout <<"iteration End"<<nl;
@@ -792,70 +792,77 @@ void Update_phi_T(Cell_2D &cell)
 }
 void Update_SumRho(int step)
 {
-	SumRho = 0.0;
-	SumT = 0.0;
+	::SumRho = 0.0;
+	::SumT = 0.0;
 	for(int i = 0;i < Cells;++i)
 	{
-		SumRho += CellArray[i].MsQ().Rho;
+		::SumRho += CellArray[i].MsQ().Rho;
 		#ifndef _ARK_ISOTHERMAL_FLIP 
-		SumT += CellArray[i].MsQ().T;
+		::SumT += CellArray[i].MsQ().T;
 		#endif
 	}
+	::SumRho -= CarCellArray[64][65]->MsQ().Rho;
 	Output_SumRho(step*dt);
 }
 void Update_Residual(int step)
 {
 #ifndef _ARK_ENDTIME_FLIP
 //---------------------------density residual-------------------------
-	// double SumRho = 0.0,SumdRho = 0.0;
-	// double dRho = 0.0;
-	// LoopPS(Cells)
-	// {
-	// 	dRho = CellArray[n].MsQ().Rho - CellArray[n].MsQ().Rho_1k;
-	// 	SumdRho += dRho*dRho;
-	// 	SumRho += CellArray[n].MsQ().Rho*CellArray[n].MsQ().Rho;
-	// 	CellArray[n].MsQ().Rho_1k = CellArray[n].MsQ().Rho;
-	// }
-	// ResidualPer1k = sqrt(SumdRho/(SumRho + 1.0E-30));
-//---------------------------velocity residual--------------------------
-	double SumUV = 0.0,Sumdudv = 0.0;
-	double du = 0.0, dv = 0.0;
-	for(int i = 0;i < Cells;++i)
+	double SumRho = 0.0,SumdRho = 0.0;
+	double dRho = 0.0;
+	LoopPS(Cells)
 	{
-		du = CellArray[i].MsQ().U - CellArray[i].MsQ().U_1k;
-		dv = CellArray[i].MsQ().V - CellArray[i].MsQ().V_1k;
-		Sumdudv += du*du + dv*dv;
-		SumUV += CellArray[i].MsQ().SqUV();
-		CellArray[i].MsQ().U_1k = CellArray[i].MsQ().U;
-		CellArray[i].MsQ().V_1k = CellArray[i].MsQ().V;
+		dRho = CellArray[n].MsQ().Rho - CellArray[n].MsQ().Rho_1k;
+		SumdRho += dRho*dRho;
+		SumRho += CellArray[n].MsQ().Rho*CellArray[n].MsQ().Rho;
+		CellArray[n].MsQ().Rho_1k = CellArray[n].MsQ().Rho;
 	}
-	ResidualPer1k = sqrt(Sumdudv/(SumUV + 1.0E-30));
+	ResidualPer1k = sqrt(SumdRho/(SumRho + 1.0E-30));
+//---------------------------velocity residual--------------------------
+	// double SumUV = 0.0,Sumdudv = 0.0;
+	// double du = 0.0, dv = 0.0;
+	// for(int i = 0;i < Cells;++i)
+	// {
+	// 	du = CellArray[i].MsQ().U - CellArray[i].MsQ().U_1k;
+	// 	dv = CellArray[i].MsQ().V - CellArray[i].MsQ().V_1k;
+	// 	Sumdudv += du*du + dv*dv;
+	// 	SumUV += CellArray[i].MsQ().SqUV();
+	// 	CellArray[i].MsQ().U_1k = CellArray[i].MsQ().U;
+	// 	CellArray[i].MsQ().V_1k = CellArray[i].MsQ().V;
+	// }
+	// ResidualPer1k = sqrt(Sumdudv/(SumUV + 1.0E-30));
 
 	Output_Residual(step*dt,ResidualPer1k);
 	if(step%writeFileControl == 0)
 	{
 		Output_Flowfield(step*dt, step);
-		//Output_MidX(step);
+		Output_Diag(step);
+		Output_MidX(step);
 	}
 #endif
 
 #if defined _ARK_ENDTIME_FLIP
-	if
-	(
-		PhaseFieldAC::iT == step 
-	||  PhaseFieldAC::iT/8 == step
-	||  PhaseFieldAC::iT/4 == step
-	||  PhaseFieldAC::iT*3/8 == step
-	||  PhaseFieldAC::iT/2 == step
-	||  PhaseFieldAC::iT*5/8 == step
-	||  PhaseFieldAC::iT*3/4 == step
-	||  PhaseFieldAC::iT*7/8 == step
-	)
-	{
-		Output_Flowfield(step*dt, step);
-		//Output_MidX(step);
-	}
-	if(step > PhaseFieldAC::iT &&step%10 == 0)
+	// if
+	// (
+	// 	PhaseFieldAC::iT == step 
+	// ||  PhaseFieldAC::iT/8 == step
+	// ||  PhaseFieldAC::iT/4 == step
+	// ||  PhaseFieldAC::iT*3/8 == step
+	// ||  PhaseFieldAC::iT/2 == step
+	// ||  PhaseFieldAC::iT*5/8 == step
+	// ||  PhaseFieldAC::iT*3/4 == step
+	// ||  PhaseFieldAC::iT*7/8 == step
+	// )
+	// {
+	// 	Output_Flowfield(step*dt, step);
+	// 	//Output_MidX(step);
+	// }
+	// if(step > PhaseFieldAC::iT &&step%10 == 0)
+	// {
+	// 	Output_Flowfield(step*dt, step);
+	// }
+
+	if(step%10 == 0)
 	{
 		Output_Flowfield(step*dt, step);
 	}
@@ -864,7 +871,7 @@ void Update_Residual(int step)
 	#ifndef _ARK_NOHUP_FLIP
 	endLoop = std::chrono::system_clock::now();
 	cout << setiosflags(ios::scientific) << setprecision(12);
-	cout <<step <<"    "<<step*dt<<"    "<<SumRho<<"    "<<SumT<<"    "<<ResidualPer1k<<fs
+	cout <<step <<"    "<<step*dt<<"    "<<::SumRho<<"    "<<SumT<<"    "<<ResidualPer1k<<fs
 	<<std::chrono::duration_cast<std::chrono::milliseconds>(endLoop-startLoop).count()
 	<<'\n';
 	startLoop = std::chrono::system_clock::now();

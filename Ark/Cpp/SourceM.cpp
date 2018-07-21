@@ -51,6 +51,11 @@ void MacroSource(Cell_2D *cellptr)
 		(cellptr->MsQ().Phi_x) = (cellptr->MsQ().Phi_x)*tmp/L + cellptr->MsQ().dPhiU()/(RT*dt);
 		(cellptr->MsQ().Phi_y) = (cellptr->MsQ().Phi_y)*tmp/L + cellptr->MsQ().dPhiV()/(RT*dt);
 	}
+	else
+	{
+		(cellptr->MsQ().Phi_x) = cellptr->MsQ().dPhiU()/(RT*dt);
+		(cellptr->MsQ().Phi_y) = cellptr->MsQ().dPhiV()/(RT*dt);
+	}
 	//
 	cellptr->MsQ().prevPhiU = (cellptr->MsQ().Phi)*(cellptr->MsQ().U);
 	cellptr->MsQ().prevPhiV = (cellptr->MsQ().Phi)*(cellptr->MsQ().V);

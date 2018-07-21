@@ -25,20 +25,20 @@ void MacroQuantity::calcMu()
 {
 		// Mu=PhaseFieldAC::MuV + (Phi-PhaseFieldAC::PhiV)*(PhaseFieldAC::MuL-PhaseFieldAC::MuV);
 		
-		Mu = PhaseFieldAC::MuV*PhaseFieldAC::MuL/
-			( 
-			  (Phi-PhaseFieldAC::PhiV)*PhaseFieldAC::MuV 
-			+ (PhaseFieldAC::PhiL-Phi)*PhaseFieldAC::MuL
-			);
+		// Mu = PhaseFieldAC::MuV*PhaseFieldAC::MuL/
+		// 	( 
+		// 	  (Phi-PhaseFieldAC::PhiV)*PhaseFieldAC::MuV 
+		// 	+ (PhaseFieldAC::PhiL-Phi)*PhaseFieldAC::MuL
+		// 	);
 		// Mu = PhaseFieldAC::NuV*PhaseFieldAC::NuL/
 		// 	( 
 		// 	  (Phi-PhaseFieldAC::PhiV)*PhaseFieldAC::NuV 
 		// 	+ (PhaseFieldAC::PhiL-Phi)*PhaseFieldAC::NuL
 		// 	);
-		// Mu *= Rho;
-		// Mu = PhaseFieldAC::NuV + (Phi-PhaseFieldAC::PhiV)*(PhaseFieldAC::NuL-PhaseFieldAC::NuV);
+		Mu = PhaseFieldAC::NuV + (Phi-PhaseFieldAC::PhiV)*(PhaseFieldAC::NuL-PhaseFieldAC::NuV);
+		Mu *= Rho;
 }
-inline double MacroQuantity::calcTau()
+double MacroQuantity::calcTau()
 {
 	return Mu/(Rho*RT);
 }
@@ -141,8 +141,8 @@ void Update_MacroVar(Cell_2D& cell)
 	cell.MsQ().U    = (IntegralGH(DV_Qv,cell.f.Tilde[0],xi_u))/(cell.MsQ().Rho*RT);
 	cell.MsQ().V    = (IntegralGH(DV_Qv,cell.f.Tilde[0],xi_v))/(cell.MsQ().Rho*RT);
 	#ifdef _ARK_FORCE_FLIP
-	cell.MsQ().U += hDt*(cell.MsQ().Fx)/cell.MsQ().Rho;
-	cell.MsQ().V += hDt*(cell.MsQ().Fy)/cell.MsQ().Rho;
+	cell.MsQ().U += hDt*(cell.MsQ().Fx)/(cell.MsQ().Rho*RT);
+	cell.MsQ().V += hDt*(cell.MsQ().Fy)/(cell.MsQ().Rho*RT);
 	#endif
 //
 	// cell.MsQ().U = 0.0;
@@ -155,8 +155,8 @@ void Update_MacroVar(Cell_2D& cell)
 	// cell.MsQ().p *= Kp;
 //
 	cell.MsQ().calcMu();
-	cell.f.tau = cell.MsQ().calcTau();
-	cell.Factor();
+	cell.f.tau = cell.MsQ().calcTau()
+;	cell.Factor();
 //
 	// cell.MsQ().U    = (IntegralGH(cell.f.Tilde[0],xi_u))/(cell.MsQ().Rho*RT);
 	// cell.MsQ().V    = (IntegralGH(cell.f.Tilde[0],xi_v))/(cell.MsQ().Rho*RT);
@@ -202,8 +202,8 @@ void Update_MacroVar_h(Face_2D& face)
 	face.MsQh().U    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_u)/(face.MsQh().Rho*RT);
 	face.MsQh().V    = IntegralGH(DV_Qv,face.f.BhDt[0],xi_v)/(face.MsQh().Rho*RT);
 	#ifdef _ARK_FORCE_FLIP
-	face.MsQh().U += 0.5*hDt*face.MsQh().Fx/face.MsQh().Rho;
-	face.MsQh().V += 0.5*hDt*face.MsQh().Fy/face.MsQh().Rho;
+	face.MsQh().U += 0.5*hDt*face.MsQh().Fx/(face.MsQh().Rho*RT);
+	face.MsQh().V += 0.5*hDt*face.MsQh().Fy/(face.MsQh().Rho*RT);
 	#endif
 
 	// face.MsQh().U = 0.0;
